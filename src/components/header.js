@@ -21,7 +21,6 @@ export default function Header() {
 			const web3 = new Web3(window.ethereum);
 
 			const accounts = await web3.eth.getAccounts();
-			console.log(accounts);
 			setConnectedAccount(accounts[0]);
 		})();
 	},[]);

@@ -3,15 +3,17 @@ import ReactDOM from 'react-dom';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import Login from './components/login';
+import reportWebVitals from './reportWebVitals';
+
 import Marketplace from './components/marketplace';
 import Header from './components/header';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+
 
 const init = {
 	routes: [
 		{ path: '/login', element: <Login /> },
-		{ path: '/', element: [<Header />, <Marketplace />] },
+		{ path: '/', element: [<Header />, <Marketplace />  ] },
 	],
 };
 
