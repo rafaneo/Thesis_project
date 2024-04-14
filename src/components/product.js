@@ -180,7 +180,7 @@ export default function Product() {
                         Choose a size
                       </RadioGroup.Label>
                       <div className='grid grid-cols-3 gap-3 sm:grid-cols-6'>
-                        {product.sizes.map(size => (
+                        {/* {product.sizes.map(size => (
                           <RadioGroup.Option
                             key={size.name}
                             value={size}
@@ -204,7 +204,7 @@ export default function Product() {
                               {size.name}
                             </RadioGroup.Label>
                           </RadioGroup.Option>
-                        ))}
+                        ))} */}
                       </div>
                     </RadioGroup>
                   </div>
