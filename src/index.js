@@ -6,14 +6,18 @@ import Login from './components/login';
 import reportWebVitals from './reportWebVitals';
 
 import Marketplace from './components/marketplace';
+import Product from './components/product';
 import Header from './components/header';
 import App from './App';
-
+import Example from './components/product_details_test';
 
 const init = {
 	routes: [
 		{ path: '/login', element: <Login /> },
 		{ path: '/', element: [<Header />, <Marketplace />  ] },
+		{ path: '/product/:id', element: [<Product/>] },
+		{ path: '/product/', element: [<Example/>] }
+
 	],
 };
 
