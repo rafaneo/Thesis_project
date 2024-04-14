@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react'
+
 import {
   MagnifyingGlassIcon,
   ArrowLongLeftIcon,
   ArrowLongRightIcon,
-} from '@heroicons/react/24/outline'
+} 
+
+from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
 import './elements/sidebar/css/sidebar.css'
 import Input from './elements/sidebar/js/input'
@@ -186,6 +189,7 @@ export default function Marketplace() {
               </div>
             </div>
           </div>
+
           <div className='col-span-6'>
             <div className='grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8'>
               {searchInput === ''
@@ -218,6 +222,7 @@ export default function Marketplace() {
               </button>
             </div>
           ) : (
+          
             <div className='flex-1 justify-end'></div>
           )}
           {page_number > 1 && (
@@ -263,9 +268,10 @@ export default function Marketplace() {
             </div>
           ) : (
             <div className='flex-1 justify-end'></div>
+
           )}
         </nav>
       </div>
     </div>
-  )
+  );
 }

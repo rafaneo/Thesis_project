@@ -4,7 +4,8 @@ import { RadioGroup } from '@headlessui/react'
 import {
   CurrencyDollarIcon,
   GlobeAmericasIcon,
-} from '@heroicons/react/24/outline'
+} 
+from '@heroicons/react/24/outline'
 import { useParams } from 'react-router-dom'
 import products from './data'
 
@@ -226,6 +227,7 @@ export default function Product() {
                     dangerouslySetInnerHTML={{ __html: product.description }}
                   />
                 </div>
+
               </div>
             </div>
           </div>
