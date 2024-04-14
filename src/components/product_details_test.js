@@ -94,7 +94,7 @@ export default function Example() {
           aria-label='Breadcrumb'
           className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'
         >
-          <ol role='list' className='flex items-center space-x-4'>
+          <ol className='flex items-center space-x-4'>
             {product.breadcrumbs.map(breadcrumb => (
               <li key={breadcrumb.id}>
                 <div className='flex items-center'>
@@ -169,7 +169,7 @@ export default function Example() {
                   </div>
                   <div className='ml-4 flex'>
                     <a
-                      href='#'
+                      href='/'
                       className='text-sm font-medium text-indigo-600 hover:text-indigo-500'
                     >
                       See all {product.reviewCount} reviews
@@ -249,7 +249,7 @@ export default function Example() {
                   <div className='flex items-center justify-between'>
                     <h2 className='text-sm font-medium text-gray-900'>Size</h2>
                     <a
-                      href='#'
+                      href='/'
                       className='text-sm font-medium text-indigo-600 hover:text-indigo-500'
                     >
                       See sizing chart
@@ -320,7 +320,7 @@ export default function Example() {
                 </h2>
 
                 <div className='prose prose-sm mt-4 text-gray-500'>
-                  <ul role='list'>
+                  <ul>
                     {product.details.map(item => (
                       <li key={item}>{item}</li>
                     ))}

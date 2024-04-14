@@ -21,7 +21,7 @@ export default function Marketplace() {
   const [condition, setConditionInput] = useState('all')
   const [category, setCategoryInput] = useState('all')
   const [price, setPriceInput] = useState('all')
-  const [brand, setBrandInput] = useState('all')
+  const [brand] = useState('all')
 
   var sidebar_filter = [brand, condition, category, price]
 

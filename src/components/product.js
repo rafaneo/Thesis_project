@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react'
 import { StarIcon } from '@heroicons/react/20/solid'
 import { RadioGroup } from '@headlessui/react'
-import {
-  CurrencyDollarIcon,
-  GlobeAmericasIcon,
-} 
-from '@heroicons/react/24/outline'
 import { useParams } from 'react-router-dom'
 import products from './data'
 
@@ -48,7 +43,7 @@ export default function Product() {
             aria-label='Breadcrumb'
             className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'
           >
-            <ol role='list' className='flex items-center space-x-4'>
+            <ol className='flex items-center space-x-4'>
               <li className='text-sm'>
                 <p
                   href={product.href}
@@ -101,7 +96,7 @@ export default function Product() {
                     </div>
                     <div className='ml-4 flex'>
                       <a
-                        href='#'
+                        href='/'
                         className='text-sm font-medium text-indigo-600 hover:text-indigo-500'
                       >
                         See all {product.reviewCount} reviews
@@ -164,7 +159,7 @@ export default function Product() {
                         Size
                       </h2>
                       <a
-                        href='#'
+                        href='/'
                         className='text-sm font-medium text-indigo-600 hover:text-indigo-500'
                       >
                         See sizing chart
