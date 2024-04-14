@@ -1,0 +1,29 @@
+.product-card {
+  height: 400px; /* Set a fixed height for the product card */
+  margin-bottom: 100px;
+}
+
+.product-card .flex-1 {
+  flex: 1; /* Ensure the flex container takes up available space */
+}
+
+.product-card h3,
+.product-card p {
+  overflow: hidden; /* Hide any overflowing content */
+  text-overflow: ellipsis; /* Truncate text with an ellipsis */
+}
+
+.product-card .line-clamp-2 {
+  /* Ensure the description is clamped to 2 lines */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2; /* Number of lines to show */
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
