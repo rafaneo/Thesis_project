@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-
 import {
   MagnifyingGlassIcon,
   ArrowLongLeftIcon,
@@ -22,6 +21,10 @@ export default function Marketplace() {
   const [category, setCategoryInput] = useState('all')
   const [price, setPriceInput] = useState('all')
   const [brand] = useState('all')
+
+
+  console.log(process.env.REACT_APP_MY_ENV_VARIABLE);
+
 
   var sidebar_filter = [brand, condition, category, price]
 
@@ -50,9 +53,7 @@ export default function Marketplace() {
     return false
   })
 
-  console.log('Array', displayedProducts)
-
-  const page_count = Math.ceil(filtered_products.length / page_length)
+  const page_count = Math.ceil(filtered_products.length / page_length);
 
   const handleChange = e => {
     e.preventDefault()
@@ -71,7 +72,6 @@ export default function Marketplace() {
   }
 
   const handlePriceChange = event => {
-    console.log('here')
     setPriceInput(event.target.value)
     setPageNumber(1)
   }
@@ -82,7 +82,7 @@ export default function Marketplace() {
         <div className='flex flex-row justify-between'>
           <h2 className='text-2xl font-semibold'>Products</h2>
           <div className='flex items-center max-w-xs sm:max-w-md w-full mb-10'>
-            <label for='simple-search' class='sr-only'>
+            <label for='simple-search' className='sr-only'>
               Search
             </label>
             <div className='relative w-full inline-flex'>

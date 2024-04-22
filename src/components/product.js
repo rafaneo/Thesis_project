@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import { StarIcon } from '@heroicons/react/20/solid'
 import { RadioGroup } from '@headlessui/react'
+// import {
+//   CurrencyDollarIcon,
+//   GlobeAmericasIcon,
+// } 
+// from '@heroicons/react/24/outline'
 import { useParams } from 'react-router-dom'
 import products from './data'
 
@@ -10,9 +15,7 @@ function classNames(...classes) {
 
 export default function Product() {
   const { id } = useParams()
-  console.log(id)
   const [product, setProduct] = useState(null)
-
   const [selectedSize, setSelectedSize] = useState(null)
 
   // const product = products.find(product => product.id === parseInt(id));

@@ -104,7 +104,7 @@ export default function Example() {
                   >
                     {breadcrumb.name}
                   </a>
-                  <svg
+                  {/* <svg
                     viewBox='0 0 6 20'
                     aria-hidden='true'
                     className='h-5 w-auto text-gray-300'
@@ -113,7 +113,7 @@ export default function Example() {
                       d='M4.878 4.34H3.551L.27 16.532h1.327l3.281-12.19z'
                       fill='currentColor'
                     />
-                  </svg>
+                  </svg> */}
                 </div>
               </li>
             ))}
