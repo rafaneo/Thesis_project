@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { RadioGroup } from '@headlessui/react';
 import { CheckCircleIcon, TrashIcon } from '@heroicons/react/20/solid';
 import RadioSeries from './elements/radio_series/js/radio_series';
-
+import styled from 'styled-components';
+import NFTUpload from './elements/nft_upload/js/nft_upload';
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
+
 const productType = [
   {
     id: 1,
@@ -213,6 +215,7 @@ export default function CreateListing() {
                 >
                   Listing Country
                 </label>
+
                 <div className='mt-1'>
                   <select
                     id='country'
@@ -226,7 +229,10 @@ export default function CreateListing() {
                 </div>
               </div>
             </div>
-
+            {/* Upload NFT */}
+            <div className='mt-10'>
+              <NFTUpload />
+            </div>
             <div className='mt-10 lg:mt-0'>
               <div className='mt-4 rounded-lg border-gray-200'>
                 <div className='border-t border-gray-200 px-4 py-6 sm:px-6'>
