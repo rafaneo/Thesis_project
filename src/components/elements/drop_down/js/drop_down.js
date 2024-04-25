@@ -66,10 +66,10 @@ const DropDown = ({ connectedAccount }) => {
                   'block px-4 py-2 text-sm'
                 )}
               >
-                My listings
+                Make a listing
               </a>
             )}
-          </Menu.Item>
+          </Menu.Item>  
           <Menu.Item>
             {({ active }) => (
               <a
