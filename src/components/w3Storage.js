@@ -1,6 +1,6 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
-import { Web3 } from 'web3';
+import { useEffect }  from 'react';
+// import { Web3 } from 'web3';
 // import { create } from '@web3-storage/w3up-client'
 // import { StoreMemory } from '@web3-storage/access/stores/store-memory'
 import { Buffer } from 'buffer';

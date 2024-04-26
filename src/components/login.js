@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useState } from "react";
+// import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Web3 } from "web3";
 const ModelViewer = require('@metamask/logo');
@@ -10,7 +10,7 @@ const ModelViewer = require('@metamask/logo');
 
 export default function Login() {
 
-const [connectedAccount, setConnectedAccount] = useState('null');
+// const [connectedAccount, setConnectedAccount] = useState('null');
 
 useEffect(() => {
   let web3;
@@ -20,7 +20,7 @@ useEffect(() => {
       web3 = new Web3(window.web3.currentProvider);
   };
 
-  const accounts = web3.eth.getAccounts()
+  web3.eth.getAccounts()
     .then(async (addr) => {
       if (addr.length > 0) {
         navigate("/");
@@ -72,6 +72,7 @@ useEffect(() => {
           <img
             className="mx-auto h-12 w-auto"
             src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
+            alt = "Logo"
           />
           <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
             Sign in to your account
