@@ -5,12 +5,19 @@
   "dependencies": {
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
+    "@metamask/jazzicon": "^2.0.0",
+    "@metamask/logo": "^3.1.2",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@web3-react/core": "^8.2.3",
+    "@web3-react/injected-connector": "^6.0.7",
+    "@web3-storage/w3up-client": "^12.5.2",
+    "axios": "^1.6.8",
+    "ethers": "^6.12.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-jazzicon": "^1.0.4",
     "react-router-dom": "^6.22.2",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4",
@@ -41,6 +48,7 @@
     ]
   },
   "devDependencies": {
+    "@types/node": "^20.12.7",
     "prettier": "^3.2.5"
   }
 }

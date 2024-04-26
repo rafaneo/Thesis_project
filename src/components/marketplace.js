@@ -3,7 +3,9 @@ import {
   MagnifyingGlassIcon,
   ArrowLongLeftIcon,
   ArrowLongRightIcon,
-} from '@heroicons/react/24/outline'
+} 
+
+from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
 import './elements/sidebar/css/sidebar.css'
 import Input from './elements/sidebar/js/input'
@@ -18,7 +20,11 @@ export default function Marketplace() {
   const [condition, setConditionInput] = useState('all')
   const [category, setCategoryInput] = useState('all')
   const [price, setPriceInput] = useState('all')
-  const [brand, setBrandInput] = useState('all')
+  const [brand] = useState('all')
+
+
+  console.log(process.env.REACT_APP_MY_ENV_VARIABLE);
+
 
   var sidebar_filter = [brand, condition, category, price]
 
@@ -47,9 +53,7 @@ export default function Marketplace() {
     return false
   })
 
-  console.log('Array', displayedProducts)
-
-  const page_count = Math.ceil(filtered_products.length / page_length)
+  const page_count = Math.ceil(filtered_products.length / page_length);
 
   const handleChange = e => {
     e.preventDefault()
@@ -68,7 +72,6 @@ export default function Marketplace() {
   }
 
   const handlePriceChange = event => {
-    console.log('here')
     setPriceInput(event.target.value)
     setPageNumber(1)
   }
@@ -79,7 +82,7 @@ export default function Marketplace() {
         <div className='flex flex-row justify-between'>
           <h2 className='text-2xl font-semibold'>Products</h2>
           <div className='flex items-center max-w-xs sm:max-w-md w-full mb-10'>
-            <label for='simple-search' class='sr-only'>
+            <label for='simple-search' className='sr-only'>
               Search
             </label>
             <div className='relative w-full inline-flex'>
@@ -186,6 +189,7 @@ export default function Marketplace() {
               </div>
             </div>
           </div>
+
           <div className='col-span-6'>
             <div className='grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8'>
               {searchInput === ''
@@ -218,6 +222,7 @@ export default function Marketplace() {
               </button>
             </div>
           ) : (
+          
             <div className='flex-1 justify-end'></div>
           )}
           {page_number > 1 && (
@@ -263,9 +268,10 @@ export default function Marketplace() {
             </div>
           ) : (
             <div className='flex-1 justify-end'></div>
+
           )}
         </nav>
       </div>
     </div>
-  )
+  );
 }

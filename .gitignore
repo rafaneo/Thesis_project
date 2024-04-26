@@ -4,13 +4,15 @@
 /node_modules
 /.pnp
 .pnp.js
-
+.env
+.env.development
+test_web3/
 # testing
 /coverage
 
 # production
 /build
-
+notes.txt
 # misc
 .DS_Store
 .env.local

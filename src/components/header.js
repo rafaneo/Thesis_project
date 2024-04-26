@@ -3,29 +3,36 @@ import { Dialog } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useLocation } from 'react-router-dom';
 import { Web3 } from 'web3';
+import DropDown from './elements/drop_down/js/drop_down';
 
 const navigation = [
 	{ name: 'All NFT', href: '/' },
-	// { name: 'Features', href: '/gamo_tin_mitera_sou' },
+	// { name: 'Features', href: '/' },
 	// { name: 'Marketplace', href: '#' },
 	// { name: 'Company', href: '#' },
 ];
 
+
+
 export default function Header() {
+	
+	
 	const [connectedAccount, setConnectedAccount] = useState();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-	const location = useLocation()
 
+	const location = useLocation()
 	useEffect(()=>{ 
 		(async()=>{
-			const web3 = new Web3(window.ethereum);
-
-			const accounts = await web3.eth.getAccounts();
-			setConnectedAccount(accounts[0]);
+			if (window.ethereum) {
+				const web3 = new Web3(window.ethereum);
+				const accounts = await web3.eth.getAccounts();
+				setConnectedAccount(accounts[0]);
+			}
 		})();
 	},[]);
+
 	return (
-		<header className="bg-white">
+		<header className="bg-white border">
 			<nav
 				className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8"
 				aria-label="Global"
@@ -70,7 +77,9 @@ export default function Header() {
 				</div>
 				<div className="hidden lg:flex">
 					{
-						connectedAccount !== undefined ? <p>Account Connected</p> : 					
+						connectedAccount !== undefined ?  
+						<DropDown connectedAccount={connectedAccount}></DropDown>
+						: 					
 						<a
 							href="/login"
 							className="text-sm font-semibold leading-6 text-gray-900"
@@ -78,17 +87,16 @@ export default function Header() {
 							Log in <span aria-hidden="true">&rarr;</span>
 						</a>
 					}
-
 				</div>
 			</nav>
-			<Dialog
+			<div
 				as="div"
 				className="lg:hidden"
 				open={mobileMenuOpen}
 				onClose={setMobileMenuOpen}
 			>
 				<div className="fixed inset-0 z-10" />
-				<Dialog.Panel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+				<div className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
 					<div className="flex items-center justify-between">
 						<a href="/" className="-m-1.5 p-1.5">
 							<img
@@ -128,8 +136,8 @@ export default function Header() {
 							</div>
 						</div>
 					</div>
-				</Dialog.Panel>
-			</Dialog>
+				</div>
+			</div>
 		</header>
 	);
 }
