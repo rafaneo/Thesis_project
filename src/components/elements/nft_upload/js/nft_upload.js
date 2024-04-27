@@ -75,9 +75,17 @@ const img = {
 function NFTUpload(props) {
   const [files, setFiles] = useState([]);
 
+  useEffect(() => {
+    props.setFileURL(files.map(file => file.preview));
+  }, [files]);
+
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
     useDropzone({
-      accept: { 'image/*': [] },
+      accept: {
+        'image/png': ['.png'],
+        'image/jpg': ['.jpg'],
+        'image/jpeg': ['.jpeg'],
+      },
       onDrop: acceptedFiles => {
         setFiles(
           acceptedFiles.map(file =>
@@ -98,6 +106,7 @@ function NFTUpload(props) {
     }),
     [isFocused, isDragAccept, isDragReject],
   );
+  const file_name = files.map(file => <li key={file.path}>{file.path}</li>);
 
   const thumbs = files.map(file => (
     <div style={thumb} key={file.name}>
@@ -105,7 +114,6 @@ function NFTUpload(props) {
         <img
           src={file.preview}
           style={img}
-          // Revoke data uri after image is loaded
           onLoad={() => {
             URL.revokeObjectURL(file.preview);
           }}
@@ -113,9 +121,9 @@ function NFTUpload(props) {
       </div>
     </div>
   ));
+  const file_url = files.map(file => file.preview);
 
   useEffect(() => {
-    // Make sure to revoke the data uris to avoid memory leaks, will run on unmount
     return () => files.forEach(file => URL.revokeObjectURL(file.preview));
   }, []);
 
@@ -124,6 +132,10 @@ function NFTUpload(props) {
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <p>Drag 'n' drop some files here, or click to select files</p>
+      </div>
+      <div className='intent-3 mt-3'>
+        <h2>File Name</h2>
+        <ul>{file_name}</ul>
       </div>
       <aside style={thumbsContainer}>{thumbs}</aside>
     </section>
