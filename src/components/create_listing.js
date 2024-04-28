@@ -8,6 +8,20 @@ import NFTUpload from './elements/nft_upload/js/nft_upload';
 import { useLocation } from 'react-router';
 import { Web3, HttpProvider } from 'web3';
 import { NFTABI } from './abi/TideNFTABI';
+import * as yup from 'yup';
+
+const schema = yup
+  .object({
+    name: yup
+      .string()
+      .max(50, 'First name must not exceed 25 characters...')
+      .required('Required!'),
+    description: yup
+      .string()
+      .max(300, 'Last name must not exceed 300 characters...'),
+    price: yup.string().max(300, 'Last name must not exceed 300 characters...'),
+  })
+  .required();
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -78,6 +92,7 @@ export default function CreateListing() {
     fileUrl: '',
     country: 'Cyprus',
   });
+
   const location = useLocation();
   const [selectedProductType, setselectedProductType] = useState(
     productType[0],
@@ -133,17 +148,16 @@ export default function CreateListing() {
       disableButton();
       const file_name = file[0].name;
       const response = await uploadFileToIPFS(file, file_name);
-      setShowSpinner(true);        
+      setShowSpinner(true);
       if (response.success === true) {
         enableButton();
-        setShowSpinner(false);        
+        setShowSpinner(false);
         console.log('Uploaded image to Pinata: ', response.pinataURL);
         setFileUrl(response.pinataURL);
         return 1;
       }
     } catch (e) {
-      setShowSpinner(false);        
-
+      setShowSpinner(false);
       console.log('Error during file upload', e);
       return -1;
     }
@@ -152,7 +166,6 @@ export default function CreateListing() {
     const { name, description, price } = formData;
 
     if (!name || !description || !price) {
-
       return -1;
     }
 
@@ -177,9 +190,7 @@ export default function CreateListing() {
   async function listNFT(e) {
     e.preventDefault();
     try {
-      
-      if (await uploadNFTImage()){ 
-
+      if (await uploadNFTImage()) {
       }
 
       // const metadataURL = await uploadMetadataToIPFS();
@@ -401,7 +412,7 @@ export default function CreateListing() {
               <NFTUpload {...'' /*setFilePath={setPaths}*/} setFile={setFile} />
             </div>
             <div className='mt-10 lg:mt-0'>
-            {showSpinner && <LinearProgress />}
+              {showSpinner ? <LinearProgress /> : null}
               <div className='mt-4 rounded-lg border-gray-200'>
                 <div className='border-t border-gray-200 px-4 py-6 sm:px-6'>
                   <button
