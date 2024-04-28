@@ -2,18 +2,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import styled from 'styled-components';
 
-const getColor = props => {
-  if (props.isDragAccept) {
-    return '#00e676';
-  }
-  if (props.isDragReject) {
-    return '#ff1744';
-  }
-  if (props.isFocused) {
-    return '#2196f3';
-  }
-  return '#eeeeee';
-};
 const baseStyle = {
   flex: 1,
   display: 'flex',
@@ -76,7 +64,7 @@ function NFTUpload(props) {
   const [files, setFiles] = useState([]);
 
   useEffect(() => {
-    props.setFileURL(files.map(file => file.preview));
+    props.setFile(files.map(file => file));
   }, [files]);
 
   const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
@@ -86,6 +74,7 @@ function NFTUpload(props) {
         'image/jpg': ['.jpg'],
         'image/jpeg': ['.jpeg'],
       },
+      maxFiles: 1,
       onDrop: acceptedFiles => {
         setFiles(
           acceptedFiles.map(file =>
@@ -96,7 +85,6 @@ function NFTUpload(props) {
         );
       },
     });
-
   const style = useMemo(
     () => ({
       ...baseStyle,
@@ -121,7 +109,6 @@ function NFTUpload(props) {
       </div>
     </div>
   ));
-  const file_url = files.map(file => file.preview);
 
   useEffect(() => {
     return () => files.forEach(file => URL.revokeObjectURL(file.preview));
