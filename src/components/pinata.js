@@ -9,8 +9,7 @@ export const uploadJSONToIPFS = async JSONBody => {
     .post(url, JSONBody, {
       headers: {
         pinata_api_key: `${process.env.REACT_APP_MY_PINATA_API_KEY}`,
-        pinata_secret_api_key:
-          `${process.env.REACT_APP_MY_PINATA_SECRET_API_KEY}`,
+        pinata_secret_api_key: `${process.env.REACT_APP_MY_PINATA_SECRET_API_KEY}`,
       },
     })
     .then(function (response) {
@@ -30,35 +29,48 @@ export const uploadJSONToIPFS = async JSONBody => {
 };
 
 export const uploadFileToIPFS = async (file, file_name) => {
+  const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+
   const JWT = `Bearer ${process.env.REACT_APP_MY_PINATA_JWT}`;
 
   const selectedFile = new Blob(file, { type: 'image/png' });
 
-
   const formData = new FormData();
-  
-  formData.append('file', selectedFile)
+
+  formData.append('file', selectedFile);
 
   const metadata = JSON.stringify({
     name: file_name,
   });
+  console.log(file_name);
   formData.append('pinataMetadata', metadata);
-  
+
   const options = JSON.stringify({
     cidVersion: 0,
-  })
+  });
   formData.append('pinataOptions', options);
 
-  try{
-    const res = await axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", formData, {
-      maxBodyLength: "Infinity",
+  return axios
+    .post(url, formData, {
+      maxBodyLength: 'Infinity',
       headers: {
         'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
-        Authorization: JWT
-      }
+        Authorization: JWT,
+      },
+    })
+    .then(function (response) {
+      console.log('image uploaded', response.data.IpfsHash);
+      return {
+        success: true,
+        pinataURL:
+          'https://gateway.pinata.cloud/ipfs/' + response.data.IpfsHash,
+      };
+    })
+    .catch(function (error) {
+      console.log(error);
+      return {
+        success: false,
+        message: error.message,
+      };
     });
-    console.log(res.data);
-  } catch (error) {
-    console.log(error);
-  }
 };

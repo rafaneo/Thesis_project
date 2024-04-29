@@ -27,3 +27,5 @@ export const NFTABI = [
   'function transferFrom(address,address,uint256)',
   'function updateListingPrice(uint256)',
 ];
+
+export const ContractAddress = '0x2c984AD9324EEc0969AfCAAA4713f4956C9FdEdC';

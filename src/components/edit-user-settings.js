@@ -7,11 +7,11 @@ const schema = yup
     firstName: yup
       .string()
       .max(25, 'First name must not exceed 25 characters...')
-      .required('Required!'),
+      .required('First name is required!'),
     lastName: yup
       .string()
       .max(25, 'Last name must not exceed 25 characters...')
-      .required('Required!'),
+      .required('Last name is required!'),
   })
   .required();
 
