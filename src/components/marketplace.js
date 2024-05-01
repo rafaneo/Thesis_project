@@ -1,44 +1,43 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
   MagnifyingGlassIcon,
   ArrowLongLeftIcon,
   ArrowLongRightIcon,
-} 
+} from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
+import './elements/sidebar/css/sidebar.css';
+import Input from './elements/sidebar/js/input';
+import products from './data';
+import ProductDetails from './elements/product_details/js/product_details';
+import { Web3 } from 'web3';
+import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
+import { GetIpfsUrlFromPinata } from './utils';
+import axios from 'axios';
 
-from '@heroicons/react/24/outline'
-import { Link } from 'react-router-dom'
-import './elements/sidebar/css/sidebar.css'
-import Input from './elements/sidebar/js/input'
-import products from './data'
-import ProductDetails from './elements/product_details/js/product_details'
-const page_length = 6
+const page_length = 6;
 
 export default function Marketplace() {
-  const [searchInput, setSearchInput] = useState('')
-  const [page_number, setPageNumber] = useState(1)
+  const [searchInput, setSearchInput] = useState('');
+  const [page_number, setPageNumber] = useState(1);
 
-  const [condition, setConditionInput] = useState('all')
-  const [category, setCategoryInput] = useState('all')
-  const [price, setPriceInput] = useState('all')
-  const [brand] = useState('all')
+  const [condition, setConditionInput] = useState('all');
+  const [category, setCategoryInput] = useState('all');
+  const [price, setPriceInput] = useState('all');
+  const [brand] = useState('all');
 
-
-  console.log(process.env.REACT_APP_MY_ENV_VARIABLE);
-
-
-  var sidebar_filter = [brand, condition, category, price]
+  var sidebar_filter = [brand, condition, category, price];
 
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [page_number])
+    window.scrollTo(0, 0);
+  }, [page_number]);
 
   const filtered_products = products.filter((product, index) =>
     product.name.toLowerCase().includes(searchInput.toLowerCase()),
-  )
+  );
 
-  const startIdx = (page_number - 1) * page_length
-  const endIdx = startIdx + page_length
-  const displayedProducts = filtered_products.slice(startIdx, endIdx)
+  const startIdx = (page_number - 1) * page_length;
+  const endIdx = startIdx + page_length;
+  const displayedProducts = filtered_products.slice(startIdx, endIdx);
 
   const sidebar_filtered_products = products.filter(product => {
     if (
@@ -48,34 +47,78 @@ export default function Marketplace() {
       return (
         (condition === 'all' || product.tags.includes(condition)) &&
         (category === 'all' || product.tags.includes(category))
-      )
+      );
     }
-    return false
-  })
+    return false;
+  });
 
   const page_count = Math.ceil(filtered_products.length / page_length);
 
   const handleChange = e => {
-    e.preventDefault()
-    setSearchInput(e.target.value)
-    setPageNumber(1)
-  }
+    e.preventDefault();
+    setSearchInput(e.target.value);
+    setPageNumber(1);
+  };
 
   const handleConditionChange = event => {
-    setConditionInput(event.target.value)
-    setPageNumber(1)
-  }
+    setConditionInput(event.target.value);
+    setPageNumber(1);
+  };
 
   const handleCategoryChange = event => {
-    setCategoryInput(event.target.value)
-    setPageNumber(1)
-  }
+    setCategoryInput(event.target.value);
+    setPageNumber(1);
+  };
 
   const handlePriceChange = event => {
-    setPriceInput(event.target.value)
-    setPageNumber(1)
-  }
+    setPriceInput(event.target.value);
+    setPageNumber(1);
+  };
 
+  const provider = new Web3.providers.HttpProvider(
+    'https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4',
+  );
+
+  const web3 = new Web3(window.ethereum);
+
+  const [data, updateData] = useState([]);
+  const [dataFetched, updateFetched] = useState(false);
+
+  async function fetchAllNFTs() {
+    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+
+    const [signer] = await web3.eth.getAccounts();
+    let transaction = await contract.methods.getAllNFTs().call();
+
+    const items = await Promise.all(
+      transaction.map(async i => {
+        var token_meta_data = await contract.methods.tokenURI(i.tokenId).call();
+        console.log('token_meta_data', token_meta_data);
+        let meta = await axios.get(token_meta_data);
+        meta = meta.data;
+
+        let price = web3.utils.toWei(i.price.toString(), 'ether');
+        let item = {
+          price,
+          tokenId: i.tokenId,
+          seller: i.seller,
+          expiry: i.expiry,
+          state: i.state,
+          owner: i.owner,
+          offer: i.offer,
+          image: meta.image,
+          name: meta.name,
+          description: meta.description,
+        };
+        console.log('item', item);
+        return item;
+      }),
+    );
+
+    updateFetched(true);
+    updateData(items);
+  }
+  if (!dataFetched) fetchAllNFTs();
   return (
     <div className='bg-white'>
       <div className='mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8 mb-10'>
@@ -193,13 +236,13 @@ export default function Marketplace() {
           <div className='col-span-6'>
             <div className='grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8'>
               {searchInput === ''
-                ? sidebar_filtered_products.map(product => (
-                    <Link to={`/product/${product.id}`}>
+                ? data.map(product => (
+                    <Link to={`/product/${product.tokenId}`}>
                       <ProductDetails product={product} />
                     </Link>
                   ))
-                : displayedProducts.map(product => (
-                    <Link to={`/product/${product.id}`}>
+                : data.map(product => (
+                    <Link to={`/product/${product.tokenId}`}>
                       <ProductDetails product={product} />
                     </Link>
                   ))}
@@ -222,7 +265,6 @@ export default function Marketplace() {
               </button>
             </div>
           ) : (
-          
             <div className='flex-1 justify-end'></div>
           )}
           {page_number > 1 && (
@@ -268,7 +310,6 @@ export default function Marketplace() {
             </div>
           ) : (
             <div className='flex-1 justify-end'></div>
-
           )}
         </nav>
       </div>

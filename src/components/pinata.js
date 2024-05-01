@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useState } from 'react';
+// import { useState } from 'react';
 
 const FormData = require('form-data');
 
@@ -9,7 +9,7 @@ export const uploadJSONToIPFS = async JSONBody => {
     .post(url, JSONBody, {
       headers: {
         pinata_api_key: `${process.env.REACT_APP_MY_PINATA_API_KEY}`,
-        pinata_secret_api_key: `${process.env.REACT_APP_MY_PINATA_SECRET_API_KEY}`,
+        pinata_secret_api_key: `${process.env.REACT_APP_MY_PINATA_SECRET_KEY}`,
       },
     })
     .then(function (response) {
@@ -42,7 +42,6 @@ export const uploadFileToIPFS = async (file, file_name) => {
   const metadata = JSON.stringify({
     name: file_name,
   });
-  console.log(file_name);
   formData.append('pinataMetadata', metadata);
 
   const options = JSON.stringify({
@@ -59,7 +58,6 @@ export const uploadFileToIPFS = async (file, file_name) => {
       },
     })
     .then(function (response) {
-      console.log('image uploaded', response.data.IpfsHash);
       return {
         success: true,
         pinataURL:

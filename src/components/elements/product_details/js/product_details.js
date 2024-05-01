@@ -1,14 +1,14 @@
-import '../css/product_details.css'
+import '../css/product_details.css';
 
 const ProductDetails = ({ product }) => {
   return (
     <div
-      key={product.id}
+      key={product.tokenId}
       className='group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white'
     >
       <div className='aspect-h-3 aspect-w-3 bg-gray-200 sm:aspect-none group-hover:opacity-75 sm:h-96'>
         <img
-          src={product.imageSrc}
+          src={product.image}
           alt={product.imageAlt}
           className='h-full w-full object-cover object-center sm:h-full sm:w-full'
         />
@@ -24,6 +24,6 @@ const ProductDetails = ({ product }) => {
         </div>
       </div>
     </div>
-  )
-}
-export default ProductDetails
+  );
+};
+export default ProductDetails;

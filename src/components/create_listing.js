@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RadioGroup } from '@headlessui/react';
 import { CheckCircleIcon } from '@heroicons/react/20/solid';
 import RadioSeries from './elements/radio_series/js/radio_series';
 import LinearProgress from '@mui/material/LinearProgress';
-import { uploadFileToIPFS, uploadJSONToIPFS, pinFileToIPFS } from './pinata';
+import { uploadFileToIPFS, uploadJSONToIPFS } from './pinata';
 import NFTUpload from './elements/nft_upload/js/nft_upload';
 import { useLocation } from 'react-router';
-import { Web3, HttpProvider } from 'web3';
-import { NFTABI, ContractAddress } from './abi/TideNFTABI';
-import { set, useForm } from 'react-hook-form';
+import { Web3 } from 'web3';
+import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { SHA256 } from 'crypto-js';
 import * as yup from 'yup';
@@ -101,7 +102,7 @@ export default function CreateListing() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isDirty, isSubmitting },
+    formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
     mode: 'all',
@@ -115,7 +116,6 @@ export default function CreateListing() {
   const provider = new Web3.providers.HttpProvider(
     'https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4',
   );
-  const contract_abi = NFTABI;
 
   const web3 = new Web3(window.ethereum);
 
@@ -123,15 +123,22 @@ export default function CreateListing() {
   const [uploadMessage, setUploadMessage] = useState(['', '']);
   const [price, setPrice] = useState('');
   const [showSpinner, setShowSpinner] = useState(false);
-  const [filePath, setFilePath] = useState(null);
   const [fileUrl, setFileUrl] = useState(null);
+  const [fileUpload, setFileUpload] = useState(false);
   const [file, setFile] = useState(null);
 
+  useEffect(() => {
+    const imageUpload = uploadNFTImage();
+    setFileUpload(imageUpload);
+  }, [file]);
+
+  const navigate = useNavigate();
+
+  var setTransactionApproved = false;
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    fileUrl: '',
     country: 'Cyprus',
   });
 
@@ -173,41 +180,40 @@ export default function CreateListing() {
 
   async function uploadNFTImage() {
     try {
-      disableButton();
       const file_name_hash = hashifyFileName(file[0].name);
       const response = await uploadFileToIPFS(file, file_name_hash);
       setShowSpinner(true);
+
       if (response.success === true) {
         enableButton();
         setTimeout(() => {
           setShowSpinner(false);
         }, 2000);
         console.log('Uploaded image to Pinata: ', response.pinataURL);
-        setUploadMessage(['success', 'Product uploaded successfully!']);
         setFileUrl(response.pinataURL);
+        console.log('fileUrl:', fileUrl);
         return 1;
       }
     } catch (e) {
       enableButton();
-      setUploadMessage(['failed', 'Error uploading product']);
       console.log('Error during file upload', e);
       return -1;
     }
   }
-  async function uploadMetadataToIPFS() {
-    const { name, description, price } = formData;
 
-    if (!name || !description || !price) {
+  async function uploadMetadataToIPFS() {
+    const { name, description } = formData;
+
+    if (!name || !price) {
       return -1;
     }
-
+    console.log(fileUrl);
     const nftJSON = {
       name,
       description,
-      price,
+      price: price,
       image: fileUrl,
     };
-
     try {
       const response = await uploadJSONToIPFS(nftJSON);
       if (response.success === true) {
@@ -227,18 +233,69 @@ export default function CreateListing() {
     } else {
       try {
         setNoFileMsg('');
-        if (await uploadNFTImage()) {
-          const [signer] = await web3.eth.getAccounts();
+        if (fileUpload) {
+          const metadataURL = await uploadMetadataToIPFS();
+          console.log('metadataURL:', metadataURL);
 
-          // const contract = new web3.eth.Contract(
-          //   contract_abi,
-          //   tide_nft.address,
-          // );
-          // const contract = new ethers.Contract(
-          //   '0x2c984AD9324EEc0969AfCAAA4713f4956C9FdEdC',
-          //   contract_abi,
-          //   signer,
-          // );
+          if (metadataURL === -1) {
+            setTimeout(() => {
+              setShowSpinner(false);
+            }, 2000);
+            setUploadMessage(['failed', 'Error uploading product']);
+            return;
+          }
+
+          const [signer] = await web3.eth.getAccounts();
+          disableButton();
+          setShowSpinner(true);
+          setUploadMessage([
+            '',
+            'Uploading NFT(might take 5 mins).. please dont click anything!',
+          ]);
+          let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+          const price_val = web3.utils.toWei(price, 'ether');
+          console.log('price:', price_val);
+          let listingPrice = await contract.methods.getListingPrice().call();
+          console.log('listingPrice:', listingPrice);
+
+          let transaction = await contract.methods
+            .createToken(metadataURL, price_val, 0)
+            .send({ from: signer, value: listingPrice })
+            .on('transactionHash', function (hash) {
+              console.log('hash', hash);
+            })
+            .on('receipt', function (receipt) {
+              console.log('reciept', receipt);
+              setTransactionApproved = true;
+            })
+            .on('error', function (error) {
+              console.error('error', error);
+            });
+
+          console.log(setTransactionApproved);
+          if (setTransactionApproved) {
+            setTimeout(() => {
+              setShowSpinner(false);
+            }, 2000);
+            setUploadMessage(['success', 'Product uploaded successfully!']);
+            setFormData({
+              name: '',
+              description: '',
+              price: '',
+            });
+            navigate('/'); // TODO change this to should listed nfts in the future!
+          } else {
+            setTimeout(() => {
+              setShowSpinner(false);
+            }, 2000);
+            setUploadMessage(['failed', 'Error uploading product']);
+            setFormData({
+              name: '',
+              description: '',
+              price: '',
+            });
+            return;
+          }
         } else {
           setTimeout(() => {
             setShowSpinner(false);
@@ -250,44 +307,6 @@ export default function CreateListing() {
         alert('Upload error' + e);
       }
     }
-
-    // const metadataURL = await uploadMetadataToIPFS();
-    // console.log('metadataURL:', metadataURL);
-    // if (metadataURL === -1) return;
-
-    // console.log(await web3.eth.get());
-
-    // const contract = new web3.eth.Contract(
-    //   contract_abi,
-    //   '0x2c984AD9324EEc0969AfCAAA4713f4956C9FdEdC',
-    // );
-    // const provider = new ethers.providers.Web3Provider(window.ethereum);
-    // const signer = provider.getSigner();
-    // disableButton();
-    // updateMessage(
-    //   'Uploading NFT(takes 5 mins).. please dont click anything!',
-    // );
-
-    // let contract = new ethers.Contract(
-    //   Marketplace.address,
-    //   Marketplace.abi,
-    //   signer,
-    // );
-
-    // const price = ethers.utils.parseUnits(formParams.price, 'ether');
-    // let listingPrice = await contract.getListPrice();
-    // listingPrice = listingPrice.toString();
-
-    // let transaction = await contract.createToken(metadataURL, price, {
-    //   value: listingPrice,
-    // });
-    // await transaction.wait();
-
-    // alert('Successfully listed your NFT!');
-    // enableButton();
-    // updateMessage('');
-    // updateFormParams({ name: '', description: '', price: '' });
-    // window.location.replace('/');
   }
 
   return (
@@ -370,7 +389,7 @@ export default function CreateListing() {
                       name='price'
                       id='price'
                       type='text'
-                      {...register('price', { valueAsNumber: true })}
+                      {...register('price')}
                       onChange={handlePriceChange}
                       value={price}
                       className='block w-[25%] rounded-md border-gray-500 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
@@ -489,7 +508,14 @@ export default function CreateListing() {
               ) : null}
             </div>
             <div className='mt-10 lg:mt-0'>
-              {showSpinner ? <LinearProgress /> : null}
+              {showSpinner ? (
+                <div>
+                  <p className='text-center text-lg font-medium text-gray-900'>
+                    Uploading Image...Please wait
+                  </p>
+                  <LinearProgress />
+                </div>
+              ) : null}
               <div className='mt-4 rounded-lg border-gray-200'>
                 <div className='border-t border-gray-200 px-4 py-6 sm:px-6'>
                   {uploadMessage[0] == 'success' ? (

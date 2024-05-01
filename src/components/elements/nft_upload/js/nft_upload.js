@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDropzone, ErrorCode } from 'react-dropzone';
+
 import styled from 'styled-components';
 
 const baseStyle = {
