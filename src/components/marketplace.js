@@ -87,14 +87,13 @@ export default function Marketplace() {
   async function fetchAllNFTs() {
     let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
-    const [signer] = await web3.eth.getAccounts();
     let transaction = await contract.methods.getAllNFTs().call();
-
     const items = await Promise.all(
       transaction.map(async i => {
         var token_meta_data = await contract.methods.tokenURI(i.tokenId).call();
-        console.log('token_meta_data', token_meta_data);
+        console.log(token_meta_data);
         let meta = await axios.get(token_meta_data);
+
         meta = meta.data;
 
         let price = web3.utils.toWei(i.price.toString(), 'ether');
@@ -110,7 +109,6 @@ export default function Marketplace() {
           name: meta.name,
           description: meta.description,
         };
-        console.log('item', item);
         return item;
       }),
     );

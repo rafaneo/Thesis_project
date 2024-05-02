@@ -8,7 +8,7 @@ import NFTUpload from './elements/nft_upload/js/nft_upload';
 import { useLocation } from 'react-router';
 import { Web3 } from 'web3';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { useForm } from 'react-hook-form';
+import { set, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { SHA256 } from 'crypto-js';
@@ -79,10 +79,11 @@ const consumableOptions = [
 const ItemOptions = [
   {
     id: 1,
-    name: 'Color',
+    name: 'Electronics',
     field_type: 'select',
   },
-  { id: 2, name: 'Size', field_type: 'select' },
+  { id: 2, name: 'Clothing', field_type: 'select' },
+  { id: 3, name: 'Books', field_type: 'select' },
 ];
 
 const RentalOptions = [
@@ -91,7 +92,6 @@ const RentalOptions = [
     name: 'Expiration Date',
     field_type: 'date',
   },
-  { id: 2, name: 'Other', field_type: 'radio' },
 ];
 
 function classNames(...classes) {
@@ -112,7 +112,6 @@ export default function CreateListing() {
       price: 1.0,
     },
   });
-
   const provider = new Web3.providers.HttpProvider(
     'https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4',
   );
@@ -126,6 +125,7 @@ export default function CreateListing() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileUpload, setFileUpload] = useState(false);
   const [file, setFile] = useState(null);
+  const [selection, setSelection] = useState({});
 
   useEffect(() => {
     const imageUpload = uploadNFTImage();
@@ -133,7 +133,11 @@ export default function CreateListing() {
   }, [file]);
 
   const navigate = useNavigate();
+  console.log(selection);
 
+  function viewSelection(selection) {
+    setSelection(selection);
+  }
   var setTransactionApproved = false;
   const [formData, setFormData] = useState({
     name: '',
@@ -464,7 +468,10 @@ export default function CreateListing() {
               {/* Second row of buttons */}
               {selectedProductType.title === 'Consumable' ? (
                 <div className='border-gray-200 pt-4'>
-                  <RadioSeries options={consumableOptions} />
+                  <RadioSeries
+                    options={consumableOptions}
+                    setSelection={viewSelection}
+                  />
                 </div>
               ) : selectedProductType.title === 'Item' ? (
                 <div className='border-gray-200 pt-4'>
