@@ -4,35 +4,38 @@ import { useState, useEffect } from 'react';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { TextField, OutlinedInput } from '@mui/material';
+import { TextField } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-const RadioSeries = ({ options, setSelection }) => {
-  const [selectedProductType, setselectedProductType] = useState(options[0]);
+function RadioSeries({ options, onSelectionChange }) {
+  const [selectedOption, setselectedOption] = useState(options[0]);
   const [expiry, setExpiry] = useState('');
-  const [expiryTimeStamp, setExpiryTimeStamp] = useState('');
+  const [expiryTimeStamp, setExpiryTimeStamp] = useState('0');
   const [radioValue, setRadioValue] = useState('on-purchase');
   const [expiryMessage, setExpiryMessage] = useState('');
+  // const [selection, setSelection] = useState({});
+  // const { errors } = props;
 
   useEffect(() => {
-    setselectedProductType(options[0]);
+    setselectedOption(options[0]);
+    setExpiryTimeStamp('0');
+    setExpiry('');
   }, [options]);
 
+  useEffect(() => {
+    onSelectionChange(selection);
+  }, [selectedOption, expiry, expiryTimeStamp, radioValue]);
+
   var selection = {
-    selectedProductType: selectedProductType,
+    selectedOption: selectedOption,
     expiry: expiry,
     expiryTimeStamp: expiryTimeStamp,
     radioValue: radioValue,
-    expiryMessage: expiryMessage,
   };
-
-  useEffect(() => {
-    setSelection(selection);
-  }, [selection]);
 
   function handleExpiryRadioChange(e) {
     setRadioValue(e.target.value);
@@ -104,7 +107,7 @@ const RadioSeries = ({ options, setSelection }) => {
 
   return (
     <div className='border-gray-200'>
-      <RadioGroup value={selectedProductType} onChange={setselectedProductType}>
+      <RadioGroup value={selectedOption} onChange={setselectedOption}>
         <div className='mt-4 grid grid-cols-3 w-full px-[5%] sm:grid-cols-3 sm:gap-x-2 sm:w-full'>
           {options.map(option =>
             option.field_type === 'date' ? (
@@ -138,7 +141,7 @@ const RadioSeries = ({ options, setSelection }) => {
                       className='w-4 h-4  text-blue-600 bg-gray-100 border-gray-300'
                     />
                     <label
-                      for='on-date-radio'
+                      htmlFor='on-date-radio'
                       className='ms-2 text-l font-small text-gray-900'
                     >
                       On date
@@ -185,7 +188,7 @@ const RadioSeries = ({ options, setSelection }) => {
                 )}
               </div>
             ) : (
-              <div className='w-[90%]'>
+              <div className='w-[90%] mb-5'>
                 <RadioGroup.Option
                   key={option.id}
                   value={option}
@@ -233,6 +236,6 @@ const RadioSeries = ({ options, setSelection }) => {
       </RadioGroup>
     </div>
   );
-};
+}
 
 export default RadioSeries;

@@ -1,36 +1,32 @@
 import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { RadioGroup } from '@headlessui/react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import products from './data';
+import ModalDialog from './elements/dialog/js/dialog';
 import axios from 'axios';
 import Web3 from 'web3';
-
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ');
-}
 
 export default function ListingView(props) {
   const { id } = useParams();
   const [data, setData] = useState([]);
-  const [userAccount, setUserAccount] = useState('');
   const [dataFetched, updateFetched] = useState(false);
+  const [wallet, setWallet] = useState('');
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
+  const [showModal, setShowModal] = useState(false);
 
-  async function TokenExpired(id) {
-    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-    let address = await web3.eth.getAccounts();
-    address = address[0];
-    try {
-      let transaction = await contract.methods
-        .updateExpiry(id)
-        .call({ from: address });
-      return true;
-    } catch (e) {
-      return false;
-    }
+  function handleDecline(e) {
+    e.preventDefault();
+    setShowModal(true);
+  }
+
+  function handleDecline2() {
+    console.log('here2');
+  }
+
+  function handleWhoops() {
+    console.log('here3');
   }
 
   useEffect(() => {
@@ -39,7 +35,7 @@ export default function ListingView(props) {
         let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
         let accounts = await web3.eth.getAccounts();
         let address = accounts[0];
-        setUserAccount(address);
+        setWallet(address);
         let transaction = await contract.methods
           .getTokenData(id)
           .call({ from: address });
@@ -56,11 +52,12 @@ export default function ListingView(props) {
         } else {
           expiry = 0;
         }
+        console.log(meta.data);
         var data = {
           price,
           tokenId: parseInt(transaction.tokenId),
           seller: transaction.seller,
-          expiryDays: parseInt(meta.data.attributes.expiry),
+          expiryDays: meta.data.attributes.expiry,
           expiryTimestamp: expiry,
           state: transaction.state,
           owner: transaction.owner,
@@ -82,14 +79,27 @@ export default function ListingView(props) {
     fetchData(); // Call the fetchData function when the component mounts
   }, [id]);
 
+  const acceptOffer = async e => {
+    e.preventDefault();
+
+    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+
+    let estimate_gas = await contract.methods.acceptOffer(id).estimateGas({
+      from: wallet,
+    });
+
+    let owner = await contract.methods.ownerOf(id).call();
+    console.log(owner);
+    let transaction = await contract.methods
+      .acceptOffer(id)
+      .send({ from: wallet, gas: estimate_gas });
+
+    // console.log(transaction);
+  };
+
   if (dataFetched === false) {
-    // setTimeout(() => {
-    //   if (dataFetched === false) {
-    //     navigate('/*');
-    //   }
-    // }, 5000);
     return <p className='text-center mt-10'>Loading...</p>;
-  } else if ((dataFetched === true && data.state === 3) || data.state === 1) {
+  } else if (dataFetched === true && data.seller !== wallet) {
     navigate('/*');
   } else {
     return (
@@ -123,8 +133,20 @@ export default function ListingView(props) {
                   </p>
                 </div>
                 {/* Reviews */}
+                <div className='mt-4'>
+                  <h2 className='sr-only'>Reviews</h2>
+                  <div className='flex items-center'>
+                    <div
+                      aria-hidden='true'
+                      className='ml-4 text-sm text-gray-300'
+                    >
+                      ·
+                    </div>
+                  </div>
+                </div>
               </div>
 
+              {/* Image gallery */}
               <div className='grid grid-cols-2 mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0'>
                 <div>
                   <img
@@ -152,6 +174,21 @@ export default function ListingView(props) {
                       {data.seller}
                     </a>
                   </h2>
+                  {data.offer !== EthreumNull ? (
+                    <h2 className='text-sm text-gray-500 mb-10'>
+                      Offer:{' '}
+                      <a
+                        href={`https://etherscan.io/address/${data.offer}`}
+                        className='inline hover:text-indigo-600 underline'
+                      >
+                        {data.seller}
+                      </a>
+                    </h2>
+                  ) : (
+                    <h2 className='text-sm text-gray-500 mb-10'>
+                      Offer: No offer
+                    </h2>
+                  )}
                   <h2 className='text-sm text-gray-500 mb-10'>
                     Expiry:{' '}
                     <p className='text-gray-800 inline'>
@@ -162,29 +199,37 @@ export default function ListingView(props) {
                     </p>
                   </h2>
                 </div>
+                {/* <div className='grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-3 lg:gap-8'></div> */}
               </div>
+
+              {/* TODO Pull data based on order number  */}
               <div className='lg:col-span-5'>
-                {data.offer === 'true' ? (
-                  <button
-                    className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-gray-400 px-8 py-3 text-base font-medium text-white focus:outline-none'
-                    disabled
-                  >
-                    This product already has an offer
-                  </button>
-                ) : data.seller === userAccount ? (
-                  <button
-                    className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-gray-400 px-8 py-3 text-base font-medium text-white focus:outline-none'
-                    disabled
-                  >
-                    You are the owner of this product
-                  </button>
-                ) : (
-                  <Link to={`/product/${data.tokenId}/purchase`}>
-                    <button className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                      Purchase Product
-                    </button>
-                  </Link>
-                )}
+                <form>
+                  {data.offer !== EthreumNull ? (
+                    <div>
+                      <button
+                        type='submit'
+                        onClick={acceptOffer}
+                        className='flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+                      >
+                        Accept Offer
+                      </button>
+                      <button
+                        onClick={handleDecline}
+                        className='flex w-full items-center justify-center rounded-md border border-transparent bg-red-400 px-8 py-3 mt-3 text-base font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2'
+                      >
+                        Decline Offer
+                      </button>
+                      {showModal && (
+                        <ModalDialog
+                          title='Are you sure you want to decline the offer?'
+                          text='Decline'
+                          buttonText='Cancel'
+                        />
+                      )}
+                    </div>
+                  ) : null}
+                </form>
                 <div className='mt-10'>
                   <h2 className='text-sm font-medium text-gray-900'>
                     Description

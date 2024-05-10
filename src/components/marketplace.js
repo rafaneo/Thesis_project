@@ -11,7 +11,8 @@ import products from './data';
 import ProductDetails from './elements/product_details/js/product_details';
 import { Web3 } from 'web3';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { GetIpfsUrlFromPinata } from './utils';
+import { updateExpiry } from './utils';
+// import { GetIpfsUrlFromPinata } from './utils';
 import axios from 'axios';
 
 const page_length = 6;
@@ -91,22 +92,23 @@ export default function Marketplace() {
     const items = await Promise.all(
       transaction.map(async i => {
         var token_meta_data = await contract.methods.tokenURI(i.tokenId).call();
-        console.log(token_meta_data);
         let meta = await axios.get(token_meta_data);
 
         meta = meta.data;
 
-        let price = web3.utils.toWei(i.price.toString(), 'ether');
+        let price = web3.utils.fromWei(i.price.toString(), 'ether');
+        let updatedExpiry = await updateExpiry(i.tokenId);
         let item = {
           price,
-          tokenId: i.tokenId,
+          tokenId: parseInt(i.tokenId),
           seller: i.seller,
           expiry: i.expiry,
-          state: i.state,
+          state: parseInt(i.state),
           owner: i.owner,
           offer: i.offer,
           image: meta.image,
           name: meta.name,
+          orderNumber: i.orderNumber,
           description: meta.description,
         };
         return item;
@@ -123,7 +125,7 @@ export default function Marketplace() {
         <div className='flex flex-row justify-between'>
           <h2 className='text-2xl font-semibold'>Products</h2>
           <div className='flex items-center max-w-xs sm:max-w-md w-full mb-10'>
-            <label for='simple-search' className='sr-only'>
+            <label htmlFor='simple-search' className='sr-only'>
               Search
             </label>
             <div className='relative w-full inline-flex'>
@@ -234,13 +236,24 @@ export default function Marketplace() {
           <div className='col-span-6'>
             <div className='grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8'>
               {searchInput === ''
-                ? data.map(product => (
-                    <Link to={`/product/${product.tokenId}`}>
-                      <ProductDetails product={product} />
-                    </Link>
-                  ))
+                ? data.map(product =>
+                    product.state !== 1 && product.state !== 3
+                      ? (console.log(product),
+                        (
+                          <Link
+                            key={product.tokenId}
+                            to={`/product/${product.tokenId}`}
+                          >
+                            <ProductDetails product={product} />
+                          </Link>
+                        ))
+                      : null,
+                  )
                 : data.map(product => (
-                    <Link to={`/product/${product.tokenId}`}>
+                    <Link
+                      key={product.tokenId}
+                      to={`/product/${product.tokenId}`}
+                    >
                       <ProductDetails product={product} />
                     </Link>
                   ))}

@@ -18,9 +18,13 @@ const ProductDetails = ({ product }) => {
           <span aria-hidden='true' className='absolute inset-0' />
           {product.name}
         </h3>
-        <p className='text-sm text-gray-500 truncate'>{product.description}</p>
+        <p className='text-sm text-gray-500 truncate' aria-hidden='true'>
+          {product.description}
+        </p>
         <div className='flex flex-1 flex-col justify-end'>
-          <p className='text-base font-medium text-gray-900'>{product.price}</p>
+          <p className='text-base font-medium text-gray-900'>
+            {product.price} TiDE
+          </p>
         </div>
       </div>
     </div>
