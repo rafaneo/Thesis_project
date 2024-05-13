@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, ErrorCode } from 'react-dropzone';
+
 import styled from 'styled-components';
 
 const baseStyle = {
@@ -25,7 +26,7 @@ const thumbsContainer = {
 };
 
 const thumb = {
-  display: 'inline-flex',
+  display: 'flex',
   borderRadius: 2,
   border: '1px solid #eaeaea',
   marginBottom: 8,
@@ -38,6 +39,7 @@ const thumb = {
 
 const thumbInner = {
   display: 'flex',
+  flexDirection: 'column',
   minWidth: 0,
   overflow: 'hidden',
 };
@@ -62,6 +64,9 @@ const img = {
 
 function NFTUpload(props) {
   const [files, setFiles] = useState([]);
+  const [fileErrorMsg, setFileErrorMsg] = useState('');
+  const { errors } = props;
+  const acceptedExtensions = ['.png', '.jpg', '.jpeg'];
 
   useEffect(() => {
     props.setFile(files.map(file => file));
@@ -75,6 +80,21 @@ function NFTUpload(props) {
         'image/jpeg': ['.jpeg'],
       },
       maxFiles: 1,
+      validator: file => {
+        if (!acceptedExtensions.includes(file.name.slice(-4))) {
+          setFileErrorMsg('Only *.jpeg, *.jpg, *.png images will be accepted');
+          return ErrorCode.FILE_TYPE_NOT_SUPPORTED;
+        } else if (files.length > 1) {
+          setFileErrorMsg('Only one file can be uploaded');
+          return ErrorCode.MAX_FILE_COUNT_EXCEEDED;
+        } else if (file.size > 1000000) {
+          setFileErrorMsg('File size should be less than 1MB');
+          return ErrorCode.MAX_FILE_SIZE_EXCEEDED;
+        }
+
+        return ErrorCode.NO_ERROR;
+      },
+
       onDrop: acceptedFiles => {
         setFiles(
           acceptedFiles.map(file =>
@@ -94,7 +114,14 @@ function NFTUpload(props) {
     }),
     [isFocused, isDragAccept, isDragReject],
   );
-  const file_name = files.map(file => <li key={file.path}>{file.path}</li>);
+  const file_name = files.map(file => (
+    <div>
+      <p>File name</p>
+      <li className='indent-5' key={file.path}>
+        {file.path}
+      </li>
+    </div>
+  ));
 
   const thumbs = files.map(file => (
     <div style={thumb} key={file.name}>
@@ -117,13 +144,23 @@ function NFTUpload(props) {
   return (
     <section className='container'>
       <div {...getRootProps({ style })}>
-        <input {...getInputProps()} />
-        <p>Drag 'n' drop some files here, or click to select files</p>
+        <input
+          {...getInputProps()}
+          name='file'
+          type='file'
+          className='form-control'
+        />
+
+        <p>
+          <p className='inline text-red-500'>*</p> Drag 'n' drop an image file,
+          or click to select an image
+          <p className='inline text-red-500'>*</p>
+        </p>
+        <em>(Only *.jpeg, *.jpg, *.png images will be accepted)</em>
       </div>
-      <div className='intent-3 mt-3'>
-        <h2>File Name</h2>
-        <ul>{file_name}</ul>
-      </div>
+      {fileErrorMsg && <p className='text-red-600'>{fileErrorMsg}</p>}
+      <div className='intent-3 mt-3'></div>
+      <aside>{file_name}</aside>
       <aside style={thumbsContainer}>{thumbs}</aside>
     </section>
   );
