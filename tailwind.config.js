@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+
 module.exports = {
   content: ['./**/*.{html,js}'],
   theme: {
@@ -8,8 +9,5 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/aspect-ratio'),
-    // require('@tailwindcss/forms')
-  ],
+  plugins: [require('@tailwindcss/aspect-ratio')],
 };

@@ -1,7 +1,18 @@
 export const TideAddress = '0xcD4435668D51477F04f74d06F5C2eE8Ecf005D60';
 export const TideABI = [
   {
-    inputs: [],
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'cap',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'reward',
+        type: 'uint256',
+      },
+    ],
     stateMutability: 'nonpayable',
     type: 'constructor',
   },
@@ -17,13 +28,13 @@ export const TideABI = [
       {
         indexed: true,
         internalType: 'address',
-        name: 'approved',
+        name: 'spender',
         type: 'address',
       },
       {
-        indexed: true,
+        indexed: false,
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'value',
         type: 'uint256',
       },
     ],
@@ -36,199 +47,17 @@ export const TideABI = [
       {
         indexed: true,
         internalType: 'address',
-        name: 'owner',
+        name: 'previousOwner',
         type: 'address',
       },
       {
         indexed: true,
         internalType: 'address',
-        name: 'operator',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'bool',
-        name: 'approved',
-        type: 'bool',
-      },
-    ],
-    name: 'ApprovalForAll',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'message',
-        type: 'string',
-      },
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'value',
-        type: 'string',
-      },
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'value2',
-        type: 'string',
-      },
-    ],
-    name: 'DebugInfo',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'NFTAccepted',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'NFTBurned',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'NFTCompleted',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'NFTExpired',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        indexed: true,
-        internalType: 'address',
-        name: 'offer',
+        name: 'newOwner',
         type: 'address',
       },
     ],
-    name: 'NFTOffer',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'orderNumber',
-        type: 'string',
-      },
-    ],
-    name: 'NFTOrderNumberUpdated',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'price',
-        type: 'uint256',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'expiry',
-        type: 'uint256',
-      },
-      {
-        indexed: false,
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'address',
-        name: 'seller',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'address',
-        name: 'offer',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'bytes32',
-        name: 'orderNumber',
-        type: 'bytes32',
-      },
-      {
-        indexed: false,
-        internalType: 'enum TideTokenNFT.NFTState',
-        name: 'state',
-        type: 'uint8',
-      },
-      {
-        indexed: false,
-        internalType: 'bool',
-        name: 'currentlyListed',
-        type: 'bool',
-      },
-    ],
-    name: 'TokenListedSuccess',
+    name: 'OwnershipTransferred',
     type: 'event',
   },
   {
@@ -247,9 +76,9 @@ export const TideABI = [
         type: 'address',
       },
       {
-        indexed: true,
+        indexed: false,
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'value',
         type: 'uint256',
       },
     ],
@@ -257,13 +86,24 @@ export const TideABI = [
     type: 'event',
   },
   {
-    inputs: [],
-    name: '_tideToken',
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: 'spender',
+        type: 'address',
+      },
+    ],
+    name: 'allowance',
     outputs: [
       {
-        internalType: 'contract IERC20',
+        internalType: 'uint256',
         name: '',
-        type: 'address',
+        type: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -272,31 +112,24 @@ export const TideABI = [
   {
     inputs: [
       {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'acceptOffer',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
         internalType: 'address',
-        name: 'to',
+        name: 'spender',
         type: 'address',
       },
       {
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'amount',
         type: 'uint256',
       },
     ],
     name: 'approve',
-    outputs: [],
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
     stateMutability: 'nonpayable',
     type: 'function',
   },
@@ -304,7 +137,7 @@ export const TideABI = [
     inputs: [
       {
         internalType: 'address',
-        name: 'owner',
+        name: 'account',
         type: 'address',
       },
     ],
@@ -320,24 +153,8 @@ export const TideABI = [
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'string',
-        name: '_tokenURI',
-        type: 'string',
-      },
-      {
-        internalType: 'uint256',
-        name: 'price',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'expiry',
-        type: 'uint256',
-      },
-    ],
-    name: 'createToken',
+    inputs: [],
+    name: 'blockReward',
     outputs: [
       {
         internalType: 'uint256',
@@ -345,18 +162,18 @@ export const TideABI = [
         type: 'uint256',
       },
     ],
-    stateMutability: 'payable',
+    stateMutability: 'view',
     type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'amount',
         type: 'uint256',
       },
     ],
-    name: 'declineOffer',
+    name: 'burn',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -364,124 +181,24 @@ export const TideABI = [
   {
     inputs: [
       {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
+        internalType: 'address',
+        name: 'account',
+        type: 'address',
       },
-    ],
-    name: 'declineOfferIndepended',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
       {
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'amount',
         type: 'uint256',
       },
     ],
-    name: 'executeSale',
-    outputs: [],
-    stateMutability: 'payable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'expireNFT',
+    name: 'burnFrom',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
   },
   {
     inputs: [],
-    name: 'getAllNFTs',
-    outputs: [
-      {
-        components: [
-          {
-            internalType: 'uint256',
-            name: 'tokenId',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'price',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'expiry',
-            type: 'uint256',
-          },
-          {
-            internalType: 'address payable',
-            name: 'owner',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'seller',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'offer',
-            type: 'address',
-          },
-          {
-            internalType: 'string',
-            name: 'orderNumber',
-            type: 'string',
-          },
-          {
-            internalType: 'enum TideTokenNFT.NFTState',
-            name: 'state',
-            type: 'uint8',
-          },
-          {
-            internalType: 'bool',
-            name: 'curentlyListed',
-            type: 'bool',
-          },
-        ],
-        internalType: 'struct TideTokenNFT.ListedToken[]',
-        name: '',
-        type: 'tuple[]',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'getApproved',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getCurrentTokenId',
+    name: 'cap',
     outputs: [
       {
         internalType: 'uint256',
@@ -494,230 +211,12 @@ export const TideABI = [
   },
   {
     inputs: [],
-    name: 'getLatestIdOfListedToken',
+    name: 'decimals',
     outputs: [
       {
-        components: [
-          {
-            internalType: 'uint256',
-            name: 'tokenId',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'price',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'expiry',
-            type: 'uint256',
-          },
-          {
-            internalType: 'address payable',
-            name: 'owner',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'seller',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'offer',
-            type: 'address',
-          },
-          {
-            internalType: 'string',
-            name: 'orderNumber',
-            type: 'string',
-          },
-          {
-            internalType: 'enum TideTokenNFT.NFTState',
-            name: 'state',
-            type: 'uint8',
-          },
-          {
-            internalType: 'bool',
-            name: 'curentlyListed',
-            type: 'bool',
-          },
-        ],
-        internalType: 'struct TideTokenNFT.ListedToken',
+        internalType: 'uint8',
         name: '',
-        type: 'tuple',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getListingPrice',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getMintingCurrency',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getMyNFTS',
-    outputs: [
-      {
-        components: [
-          {
-            internalType: 'uint256',
-            name: 'tokenId',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'price',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'expiry',
-            type: 'uint256',
-          },
-          {
-            internalType: 'address payable',
-            name: 'owner',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'seller',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'offer',
-            type: 'address',
-          },
-          {
-            internalType: 'string',
-            name: 'orderNumber',
-            type: 'string',
-          },
-          {
-            internalType: 'enum TideTokenNFT.NFTState',
-            name: 'state',
-            type: 'uint8',
-          },
-          {
-            internalType: 'bool',
-            name: 'curentlyListed',
-            type: 'bool',
-          },
-        ],
-        internalType: 'struct TideTokenNFT.ListedToken[]',
-        name: '',
-        type: 'tuple[]',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'getOrderNumber',
-    outputs: [
-      {
-        internalType: 'string',
-        name: '',
-        type: 'string',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'getTokenData',
-    outputs: [
-      {
-        components: [
-          {
-            internalType: 'uint256',
-            name: 'tokenId',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'price',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'expiry',
-            type: 'uint256',
-          },
-          {
-            internalType: 'address payable',
-            name: 'owner',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'seller',
-            type: 'address',
-          },
-          {
-            internalType: 'address payable',
-            name: 'offer',
-            type: 'address',
-          },
-          {
-            internalType: 'string',
-            name: 'orderNumber',
-            type: 'string',
-          },
-          {
-            internalType: 'enum TideTokenNFT.NFTState',
-            name: 'state',
-            type: 'uint8',
-          },
-          {
-            internalType: 'bool',
-            name: 'curentlyListed',
-            type: 'bool',
-          },
-        ],
-        internalType: 'struct TideTokenNFT.ListedToken',
-        name: '',
-        type: 'tuple',
+        type: 'uint8',
       },
     ],
     stateMutability: 'view',
@@ -727,16 +226,16 @@ export const TideABI = [
     inputs: [
       {
         internalType: 'address',
-        name: 'owner',
+        name: 'spender',
         type: 'address',
       },
       {
-        internalType: 'address',
-        name: 'operator',
-        type: 'address',
+        internalType: 'uint256',
+        name: 'subtractedValue',
+        type: 'uint256',
       },
     ],
-    name: 'isApprovedForAll',
+    name: 'decreaseAllowance',
     outputs: [
       {
         internalType: 'bool',
@@ -744,18 +243,23 @@ export const TideABI = [
         type: 'bool',
       },
     ],
-    stateMutability: 'view',
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
     inputs: [
       {
+        internalType: 'address',
+        name: 'spender',
+        type: 'address',
+      },
+      {
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'addedValue',
         type: 'uint256',
       },
     ],
-    name: 'isExpired',
+    name: 'increaseAllowance',
     outputs: [
       {
         internalType: 'bool',
@@ -763,65 +267,7 @@ export const TideABI = [
         type: 'bool',
       },
     ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'myAddress',
-        type: 'address',
-      },
-    ],
-    name: 'isSender',
-    outputs: [
-      {
-        internalType: 'string',
-        name: '',
-        type: 'string',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'listPrice',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'makeOffer',
-    outputs: [],
-    stateMutability: 'payable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'makeOfferIndepended',
-    outputs: [],
-    stateMutability: 'payable',
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -838,14 +284,8 @@ export const TideABI = [
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'ownerOf',
+    inputs: [],
+    name: 'owner',
     outputs: [
       {
         internalType: 'address',
@@ -854,86 +294,11 @@ export const TideABI = [
       },
     ],
     stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'from',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: 'to',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'safeTransferFrom',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'from',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: 'to',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes',
-        name: 'data',
-        type: 'bytes',
-      },
-    ],
-    name: 'safeTransferFrom',
-    outputs: [],
-    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
     inputs: [],
-    name: 'serverAddress',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'operator',
-        type: 'address',
-      },
-      {
-        internalType: 'bool',
-        name: 'approved',
-        type: 'bool',
-      },
-    ],
-    name: 'setApprovalForAll',
+    name: 'renounceOwnership',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -942,63 +307,13 @@ export const TideABI = [
     inputs: [
       {
         internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'expiryDate',
+        name: 'reward',
         type: 'uint256',
       },
     ],
-    name: 'setExpiryDate',
+    name: 'setBlockReward',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'newMintingCurrency',
-        type: 'address',
-      },
-    ],
-    name: 'setMintingCurrency',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: '_newServer',
-        type: 'address',
-      },
-    ],
-    name: 'setServerAddress',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'bytes4',
-        name: 'interfaceId',
-        type: 'bytes4',
-      },
-    ],
-    name: 'supportsInterface',
-    outputs: [
-      {
-        internalType: 'bool',
-        name: '',
-        type: 'bool',
-      },
-    ],
-    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -1016,12 +331,12 @@ export const TideABI = [
   },
   {
     inputs: [],
-    name: 'tideTokenAddress',
+    name: 'totalSupply',
     outputs: [
       {
-        internalType: 'address',
+        internalType: 'uint256',
         name: '',
-        type: 'address',
+        type: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -1030,20 +345,25 @@ export const TideABI = [
   {
     inputs: [
       {
+        internalType: 'address',
+        name: 'to',
+        type: 'address',
+      },
+      {
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'amount',
         type: 'uint256',
       },
     ],
-    name: 'tokenURI',
+    name: 'transfer',
     outputs: [
       {
-        internalType: 'string',
+        internalType: 'bool',
         name: '',
-        type: 'string',
+        type: 'bool',
       },
     ],
-    stateMutability: 'view',
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -1060,55 +380,30 @@ export const TideABI = [
       },
       {
         internalType: 'uint256',
-        name: 'tokenId',
+        name: 'amount',
         type: 'uint256',
       },
     ],
     name: 'transferFrom',
-    outputs: [],
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
     stateMutability: 'nonpayable',
     type: 'function',
   },
   {
     inputs: [
       {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
+        internalType: 'address',
+        name: 'newOwner',
+        type: 'address',
       },
     ],
-    name: 'updateExpiry',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '_listPrice',
-        type: 'uint256',
-      },
-    ],
-    name: 'updateListingPrice',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'string',
-        name: 'ordernumber',
-        type: 'string',
-      },
-    ],
-    name: 'updateOrderNumber',
+    name: 'transferOwnership',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',

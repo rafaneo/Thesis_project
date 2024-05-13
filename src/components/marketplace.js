@@ -237,17 +237,14 @@ export default function Marketplace() {
             <div className='grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8'>
               {searchInput === ''
                 ? data.map(product =>
-                    product.state !== 1 && product.state !== 3
-                      ? (console.log(product),
-                        (
-                          <Link
-                            key={product.tokenId}
-                            to={`/product/${product.tokenId}`}
-                          >
-                            <ProductDetails product={product} />
-                          </Link>
-                        ))
-                      : null,
+                    product.state === 0 ? (
+                      <Link
+                        key={product.tokenId}
+                        to={`/product/${product.tokenId}`}
+                      >
+                        <ProductDetails product={product} />
+                      </Link>
+                    ) : null,
                   )
                 : data.map(product => (
                     <Link

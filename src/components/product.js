@@ -7,10 +7,6 @@ import products from './data';
 import axios from 'axios';
 import Web3 from 'web3';
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ');
-}
-
 export default function ListingView(props) {
   const { id } = useParams();
   const [data, setData] = useState([]);
@@ -18,6 +14,8 @@ export default function ListingView(props) {
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
+
+  // TODO Ability to change listing.
 
   async function TokenExpired(id) {
     let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
@@ -70,7 +68,6 @@ export default function ListingView(props) {
           description: meta.data.description,
           selectedOptions: meta.data.selectedOptions,
         };
-
         setData(data);
         updateFetched(true);
       } catch (error) {
@@ -155,28 +152,31 @@ export default function ListingView(props) {
                   <h2 className='text-sm text-gray-500 mb-10'>
                     Expiry:{' '}
                     <p className='text-gray-800 inline'>
-                      {data.expiryDays === undefined ? null : (
-                        <span className='inline'>{data.expiryDays}-days </span>
+                      {data.expiryTimestamp === 0 ? (
+                        <p className='inline'>No expiry</p>
+                      ) : (
+                        <span className='inline'>
+                          {data.expiryDays}-days {data.expiryTimestamp}
+                        </span>
                       )}
-                      {data.expiryTimestamp}
                     </p>
                   </h2>
                 </div>
               </div>
               <div className='lg:col-span-5'>
-                {data.offer === 'true' ? (
-                  <button
-                    className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-gray-400 px-8 py-3 text-base font-medium text-white focus:outline-none'
-                    disabled
-                  >
-                    This product already has an offer
-                  </button>
-                ) : data.seller === userAccount ? (
+                {data.seller === userAccount ? (
                   <button
                     className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-gray-400 px-8 py-3 text-base font-medium text-white focus:outline-none'
                     disabled
                   >
                     You are the owner of this product
+                  </button>
+                ) : data.offer !== EthreumNull ? (
+                  <button
+                    className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-gray-400 px-8 py-3 text-base font-medium text-white focus:outline-none'
+                    disabled
+                  >
+                    This product already has an offer
                   </button>
                 ) : (
                   <Link to={`/product/${data.tokenId}/purchase`}>

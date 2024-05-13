@@ -1,4 +1,3 @@
-import { useAuth } from '../isLogged';
 import { useState, useEffect } from 'react';
 import { RadioGroup } from '@headlessui/react';
 import { CheckCircleIcon } from '@heroicons/react/20/solid';
@@ -175,6 +174,9 @@ export default function CreateListing() {
       [event.target.name]: event.target.value,
     });
   };
+  const onSubmit = data => {
+    console.log(data);
+  };
 
   async function uploadNFTImage() {
     try {
@@ -203,10 +205,8 @@ export default function CreateListing() {
     const { name, description, price, country } = formData;
     console.log(formData);
     if (!name || !price) {
-      console.log(name, price);
       return -1;
     }
-    console.log(fileUrl);
     const nftJSON = {
       name,
       description,
@@ -218,16 +218,12 @@ export default function CreateListing() {
     try {
       const response = await uploadJSONToIPFS(nftJSON);
       if (response.success === true) {
-        console.log('Uploaded JSON to Pinata: ', response);
         return response.pinataURL;
       }
     } catch (e) {
       console.log('error uploading JSON metadata:', e);
     }
   }
-  const onSubmit = data => {
-    console.log(data); // Handle form data submission
-  };
   async function listNFT(e, data) {
     e.preventDefault();
     handleSubmit(onSubmit)();
@@ -261,10 +257,16 @@ export default function CreateListing() {
         const price_val = web3.utils.toWei(formData.price, 'ether');
 
         let listingPrice = await contract.methods.getListingPrice().call();
-
+        let nonce = await web3.eth.getTransactionCount(signer);
+        console.log('nonce', nonce);
         let transaction = await contract.methods
           .createToken(metadataURL, price_val, data.expiryTimeStamp)
-          .send({ from: signer, value: listingPrice })
+          .send({
+            from: signer,
+            value: listingPrice,
+            gas: 3000000,
+            gasPrice: web3.utils.toWei('100', 'gwei'), // Adjust the gas price here
+          })
           .on('transactionHash', function (hash) {
             console.log('hash', hash);
           })
@@ -276,7 +278,6 @@ export default function CreateListing() {
             console.error('error', error);
           });
 
-        console.log(setTransactionApproved);
         if (setTransactionApproved) {
           setTimeout(() => {
             setShowSpinner(false);
@@ -330,7 +331,7 @@ export default function CreateListing() {
                   htmlFor='name'
                   className='block text-sm font-medium text-gray-700'
                 >
-                  Listing Name
+                  Listing Name <p className='inline text-red-500'>*</p>
                 </label>
                 <div className='mt-1'>
                   <input
@@ -388,7 +389,7 @@ export default function CreateListing() {
                     htmlFor='price'
                     className='block text-sm font-medium text-gray-700'
                   >
-                    Price (TiDE)
+                    Price (TiDE) <p className='inline text-red-500'>*</p>
                   </label>
                   <div className='mt-1'>
                     <input
@@ -415,7 +416,7 @@ export default function CreateListing() {
                   onChange={setselectedProductType}
                 >
                   <RadioGroup.Label className='text-m font-medium text-gray-900'>
-                    Product Type
+                    Product Type <p className='inline text-red-500'>*</p>
                   </RadioGroup.Label>
 
                   <div className='mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-2 sm:w-[100%]'>

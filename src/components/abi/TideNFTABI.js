@@ -1,8 +1,14 @@
-export const ContractAddress = '0xF5Bf7f06F338b2a79F35c33cF003De88772B8cD7';
+export const ContractAddress = '0x4558fC8414f0971b2e5A6021d35DdaE34CbcBb75';
 export const EthreumNull = '0x0000000000000000000000000000000000000000';
 export const TIDEABI = [
   {
-    inputs: [],
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'initialOwnwer',
+        type: 'address',
+      },
+    ],
     stateMutability: 'nonpayable',
     type: 'constructor',
   },
@@ -169,6 +175,25 @@ export const TIDEABI = [
       },
     ],
     name: 'NFTOrderNumberUpdated',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'previousOwner',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'newOwner',
+        type: 'address',
+      },
+    ],
+    name: 'OwnershipTransferred',
     type: 'event',
   },
   {
@@ -360,19 +385,6 @@ export const TIDEABI = [
     name: 'declineOffer',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'executeSale',
-    outputs: [],
-    stateMutability: 'payable',
     type: 'function',
   },
   {
@@ -627,6 +639,66 @@ export const TIDEABI = [
     type: 'function',
   },
   {
+    inputs: [],
+    name: 'getMyOffers',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'tokenId',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'price',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiry',
+            type: 'uint256',
+          },
+          {
+            internalType: 'address payable',
+            name: 'owner',
+            type: 'address',
+          },
+          {
+            internalType: 'address payable',
+            name: 'seller',
+            type: 'address',
+          },
+          {
+            internalType: 'address payable',
+            name: 'offer',
+            type: 'address',
+          },
+          {
+            internalType: 'string',
+            name: 'orderNumber',
+            type: 'string',
+          },
+          {
+            internalType: 'enum TideTokenNFT.NFTState',
+            name: 'state',
+            type: 'uint8',
+          },
+          {
+            internalType: 'bool',
+            name: 'curentlyListed',
+            type: 'bool',
+          },
+        ],
+        internalType: 'struct TideTokenNFT.ListedToken[]',
+        name: '',
+        type: 'tuple[]',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [
       {
         internalType: 'uint256',
@@ -774,6 +846,19 @@ export const TIDEABI = [
     type: 'function',
   },
   {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'tokenId',
+        type: 'uint256',
+      },
+    ],
+    name: 'listExistingToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
     inputs: [],
     name: 'listPrice',
     outputs: [
@@ -813,6 +898,19 @@ export const TIDEABI = [
     type: 'function',
   },
   {
+    inputs: [],
+    name: 'owner',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [
       {
         internalType: 'uint256',
@@ -829,6 +927,13 @@ export const TIDEABI = [
       },
     ],
     stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -1040,6 +1145,32 @@ export const TIDEABI = [
       },
     ],
     name: 'transferFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'newOwner',
+        type: 'address',
+      },
+    ],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'tokenId',
+        type: 'uint256',
+      },
+    ],
+    name: 'unlistToken',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',

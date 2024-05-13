@@ -151,7 +151,11 @@ function NFTUpload(props) {
           className='form-control'
         />
 
-        <p>Drag 'n' drop an image file, or click to select an image</p>
+        <p>
+          <p className='inline text-red-500'>*</p> Drag 'n' drop an image file,
+          or click to select an image
+          <p className='inline text-red-500'>*</p>
+        </p>
         <em>(Only *.jpeg, *.jpg, *.png images will be accepted)</em>
       </div>
       {fileErrorMsg && <p className='text-red-600'>{fileErrorMsg}</p>}

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import Web3 from 'web3';
 
-export default function Example() {
+export default function MyListings() {
   // const { navigate, state } = useLocation();
   const [data, updateData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
@@ -21,7 +21,6 @@ export default function Example() {
     let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
     let address = await web3.eth.getAccounts();
     address = address[0];
-    console.log(address);
     let transaction = await contract.methods
       .getMyNFTS()
       .call({ from: address });
@@ -43,7 +42,7 @@ export default function Example() {
           tokenId: parseInt(i.tokenId),
           seller: i.seller,
           expiry: expiry,
-          state: i.state,
+          state: parseInt(i.state),
           owner: i.owner,
           offer: i.offer,
           image: meta.image,
@@ -60,14 +59,6 @@ export default function Example() {
   function handleClick() {
     navigate('/create_listing');
   }
-
-  //   function fetchNFT(data) {
-  //     const newTo = {
-  //       pathname: '/nftPage/' + data.data.tokenId,
-  //     };
-
-  //     const IPFSUrl = GetIpfsUrlFromPinata(data.data.image);
-  //   }
 
   const truncateStyle = {
     maxWidth: '250px',

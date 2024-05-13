@@ -1,26 +1,26 @@
+import EditUserSettings from './components/edit-user-settings';
+import CreateListing from './components/create_listing';
+import ViewTokenData from './components/ViewTokenData';
+import OrderHistory from './components/order_history';
+import ShoppingCart from './components/shopping-cart';
+import Purchase from './components/purchase_product';
+import Marketplace from './components/marketplace';
+import MyListings from './components/my_listings';
+import ListingView from './components/view_offer';
+import TestForm from './components/test_form';
+import { useEffect, useState } from 'react';
+import Product from './components/product';
+import Header from './components/header';
+import Footer from './components/footer';
+import Login from './components/login';
+import Web3 from 'web3';
+import './index.css';
 import {
   BrowserRouter as Router,
   Route,
   Routes,
   useNavigate,
 } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import Marketplace from './components/marketplace';
-import Product from './components/product';
-import Header from './components/header';
-import Example from './components/product_details_test';
-import Login from './components/login';
-import Footer from './components/footer';
-import TestForm from './components/test_form';
-import CreateListing from './components/create_listing';
-import EditUserSettings from './components/edit-user-settings';
-import MyListings from './components/my_listings';
-import ListingView from './components/view_offer';
-import ShoppingCart from './components/shopping-cart';
-import ViewTokenData from './components/ViewTokenData';
-import Purchase from './components/purchase_product';
-import Web3 from 'web3';
-import './index.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -50,16 +50,18 @@ function App() {
           <Route path='/' element={<Marketplace />} />
           {isLoggedIn && (
             <>
+              {/*This is for testing */}
+
+              <Route path='/view_token_data/' element={<ViewTokenData />} />
+
               <Route path='/my_listings' element={<MyListings />} />
               <Route path='/create_listing' element={<CreateListing />} />
-              <Route path='/product' element={<Example />} />
-              <Route path='/view_token_data/' element={<ViewTokenData />} />
-              {/*This is for testing */}
               <Route path='/product/:id' element={<Product />} />
               <Route path='/product/:id/purchase' element={<Purchase />} />
               <Route path='/settings' element={<EditUserSettings />} />
               <Route path='/test_form' element={<TestForm />} />
               <Route path='/view_listing/:id' element={<ListingView />} />
+              <Route path='/order_history' element={<OrderHistory />} />
             </>
           )}
           <Route path='/login' element={<Login />} />

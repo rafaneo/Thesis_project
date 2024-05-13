@@ -4,10 +4,33 @@ import { CheckCircleIcon, TrashIcon } from '@heroicons/react/20/solid';
 import { useParams, useNavigate } from 'react-router-dom';
 import Web3 from 'web3';
 import axios from 'axios';
-import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
+import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import { TideABI, TideAddress } from './abi/TideTokenABI';
-import { convertGasToTide } from './utils';
+import { set, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 
+const schema = yup
+  .object({
+    email: yup
+      .string()
+      .email('Please enter a valid email address...')
+      .required('Email is required!'),
+    firstName: yup
+      .string()
+      .required('First name is required!')
+      .min(2, 'First name must be at least 2 characters...'),
+    surname: yup
+      .string()
+      .required('Last name is required!')
+      .min(2, 'Last name must be at least 2 characters...'),
+    address: yup.string().required('Address is required!'),
+    city: yup.string().required('City is required!'),
+    countryField: yup.string().required('Country is required!'),
+    postalCode: yup.string().required('Postal code is required!'),
+    phone: yup.string(),
+  })
+  .required();
 const deliveryMethods = [
   {
     id: 1,
@@ -22,6 +45,7 @@ const deliveryMethods = [
     price: '40.00',
   },
 ];
+
 const paymentMethods = [
   { id: 'credit-card', title: 'Credit card' },
   { id: 'paypal', title: 'PayPal' },
@@ -41,8 +65,41 @@ export default function Purchase() {
   const [data, setData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
   const [userAccount, setUserAccount] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    name: '',
+    surname: '',
+    address: '',
+    country: 'Cyprus',
+    city: '',
+    apartment: '',
+    postalCode: '',
+    phone: '+357',
+  });
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+    mode: 'all',
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 1.0,
+    },
+  });
+
+  const handleChange = event => {
+    setFormData({
+      ...formData,
+      [event.target.name]: event.target.value,
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,20 +149,18 @@ export default function Purchase() {
 
     fetchData(); // Call the fetchData function when the component mounts
   }, [id]);
+  const onSubmit = data => console.log(data);
 
   const purchase = async e => {
     e.preventDefault();
+    handleSubmit(onSubmit)();
+    setErrorMessage('');
     let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
     let tokenContract = new web3.eth.Contract(TideABI, TideAddress);
 
     try {
       const total_before_gas =
         parseFloat(data.price) + parseFloat(selectedDeliveryMethod.price);
-
-      // const gasEstimation = await contract.methods.makeOffer(id).estimateGas({
-      //   from: userAccount,
-      // });
-      // console.log(gasEstimation);
 
       const approvalTx = await tokenContract.methods
         .approve(ContractAddress, total_before_gas)
@@ -119,16 +174,65 @@ export default function Purchase() {
         gas: 300000, // Use the estimated gas
       });
       console.log('Transaction:', transaction);
+
+      try {
+        const order = {
+          email: formData.email,
+          name: formData.name,
+          surname: formData.surname,
+          seller: data.seller,
+          buyer: userAccount,
+          tokenId: id,
+          address: formData.address,
+          country: formData.country,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          unit: formData.apartment,
+          delivery: selectedDeliveryMethod.title,
+          phone: formData.phone,
+          productCost: data.price,
+          total: total_before_gas,
+        };
+
+        console.log('Order:', order);
+        const orderResponse = await axios.post(
+          'http://192.168.1.159:8000/api/createOrder',
+          order,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+        console.log('Order response:', orderResponse);
+      } catch (e) {
+        if (e.response.data.error == '1000') {
+          setErrorMessage('Invalid Request!');
+        } else if (
+          e.response.data.error >= 1001 &&
+          e.response.data.error <= 1014
+        ) {
+          setErrorMessage('Some of the fields are missing or invalid!');
+        } else if (e.response.data.error == 1015) {
+          setErrorMessage('There is already an order for this product!');
+        } else {
+          setErrorMessage('Something went wrong! Try again');
+        }
+      }
       return true;
     } catch (e) {
-      console.log(e);
+      console.log(e.data);
       return false;
     }
   };
 
   if (dataFetched === false) {
     return <p className='text-center mt-10'>Loading...</p>;
-  } else if ((dataFetched === true && data.state === 3) || data.state === 1) {
+  } else if (
+    (dataFetched === true && data.state === 3) ||
+    data.state === 1 ||
+    data.offer !== EthreumNull
+  ) {
     navigate('/*');
   } else {
     return (
@@ -136,7 +240,10 @@ export default function Purchase() {
         <div className='mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8'>
           <h2 className='sr-only'>Checkout</h2>
 
-          <form className='lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16'>
+          <form
+            className='lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16'
+            onSubmit={e => purchase(e)}
+          >
             <div>
               <div>
                 <h2 className='text-lg font-medium text-gray-900'>
@@ -147,23 +254,23 @@ export default function Purchase() {
                     htmlFor='name'
                     className='block text-sm font-medium text-gray-700'
                   >
-                    Email address
+                    Email address <p className='inline text-red-600'>*</p>
                   </label>
                   <div className='mt-1'>
                     <input
                       type='text'
-                      id='name'
-                      name='name'
-                      // value={formData.name}
-                      // {...register('name')}
-                      // onChange={handleChange}
+                      id='email'
+                      name='email'
+                      value={formData.email}
+                      {...register('email')}
+                      onChange={handleChange}
                       className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
                     />
-                    {/* {errors.name?.message && (
+                    {errors.email?.message && (
                       <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
+                        {errors.email.message}
                       </p>
-                    )} */}
+                    )}
                   </div>
                 </div>
               </div>
@@ -186,16 +293,16 @@ export default function Purchase() {
                         type='text'
                         id='name'
                         name='name'
-                        // value={formData.name}
-                        // {...register('name')}
-                        // onChange={handleChange}
+                        value={formData.name}
+                        {...register('name')}
+                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
-                      {/* {errors.name?.message && (
-                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
-                      </p>
-                    )} */}
+                      {errors.name?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.name.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -209,18 +316,18 @@ export default function Purchase() {
                     <div className='mt-1'>
                       <input
                         type='text'
-                        id='name'
-                        name='name'
-                        // value={formData.name}
-                        // {...register('name')}
-                        // onChange={handleChange}
+                        id='surname'
+                        name='surname'
+                        value={formData.surname}
+                        {...register('surname')}
+                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
-                      {/* {errors.name?.message && (
-                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
-                      </p>
-                    )} */}
+                      {errors.surname?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.surname.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className='sm:col-span-2'>
@@ -229,23 +336,23 @@ export default function Purchase() {
                         htmlFor='name'
                         className='block text-sm font-medium text-gray-700'
                       >
-                        Address
+                        Address <p className='inline text-red-600'>*</p>
                       </label>
                       <div className='mt-1'>
                         <input
                           type='text'
-                          id='name'
-                          name='name'
-                          // value={formData.name}
-                          // {...register('name')}
-                          // onChange={handleChange}
+                          id='address'
+                          name='address'
+                          value={formData.address}
+                          {...register('address')}
+                          onChange={handleChange}
                           className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
                         />
-                        {/* {errors.name?.message && (
-                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
-                      </p>
-                    )} */}
+                        {errors.address?.message && (
+                          <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                            {errors.address.message}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -260,18 +367,18 @@ export default function Purchase() {
                     <div className='mt-1'>
                       <input
                         type='text'
-                        id='name'
-                        name='name'
-                        // value={formData.name}
-                        // {...register('name')}
-                        // onChange={handleChange}
+                        id='apartment'
+                        name='apartment'
+                        value={formData.apartment}
+                        {...register('apartment')}
+                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
-                      {/* {errors.name?.message && (
-                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
-                      </p>
-                    )} */}
+                      {errors.apartment?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.apartment.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -280,23 +387,23 @@ export default function Purchase() {
                       htmlFor='name'
                       className='block text-sm font-medium text-gray-700'
                     >
-                      City{' '}
+                      City <p className='inline text-red-600'>*</p>
                     </label>
                     <div className='mt-1'>
                       <input
                         type='text'
-                        id='name'
-                        name='name'
-                        // value={formData.name}
-                        // {...register('name')}
-                        // onChange={handleChange}
+                        id='city'
+                        name='city'
+                        value={formData.city}
+                        {...register('city')}
+                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
-                      {/* {errors.name?.message && (
-                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
-                      </p>
-                    )} */}
+                      {errors.city?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.city.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -304,15 +411,15 @@ export default function Purchase() {
                       htmlFor='country'
                       className='block text-sm font-medium text-gray-700'
                     >
-                      Country
+                      Country <p className='inline text-red-600'>*</p>
                     </label>
                     <div className='mt-1'>
                       <div className='mt-1'>
                         <select
                           id='country'
                           name='country'
-                          // value={formData.country}
-                          // onChange={handleChange}
+                          value={formData.country}
+                          onChange={handleChange}
                           autoComplete='country-name'
                           className='block w-full rounded-md border border-gray-200 shadow-xl bg-white focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                         >
@@ -321,33 +428,38 @@ export default function Purchase() {
                         </select>
                       </div>
                     </div>
+                    {errors.countryField?.message && (
+                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                        {errors.countryField.message}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label
                       htmlFor='name'
                       className='block text-sm font-medium text-gray-700'
                     >
-                      Postal Code{' '}
+                      Postal Code <p className='inline text-red-600'>*</p>
                     </label>
                     <div className='mt-1'>
                       <input
                         type='text'
-                        id='name'
-                        name='name'
-                        // value={formData.name}
-                        // {...register('name')}
-                        // onChange={handleChange}
+                        id='postalCode'
+                        name='postalCode'
+                        value={formData.postalCode}
+                        {...register('postalCode')}
+                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl bg-white focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
-                      {/* {errors.name?.message && (
-                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
-                      </p>
-                    )} */}
+                      {errors.postalCode?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.postalCode.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className='sm:col-span-2'>
+                  <div className='sm:col-span-2 '>
                     <label
                       htmlFor='name'
                       className='block text-sm font-medium text-gray-700'
@@ -357,18 +469,18 @@ export default function Purchase() {
                     <div className='mt-1'>
                       <input
                         type='text'
-                        id='name'
-                        name='name'
-                        // value={formData.name}
-                        // {...register('name')}
-                        // onChange={handleChange}
+                        id='phone'
+                        name='phone'
+                        value={formData.phone}
+                        {...register('phone')}
+                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
-                      {/* {errors.name?.message && (
-                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                        {errors.name.message}
-                      </p>
-                    )} */}
+                      {errors.phone?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.phone.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -380,7 +492,7 @@ export default function Purchase() {
                   onChange={setSelectedDeliveryMethod}
                 >
                   <RadioGroup.Label className='text-lg font-medium text-gray-900'>
-                    Delivery method
+                    Delivery method <p className='inline text-red-600'>*</p>
                   </RadioGroup.Label>
 
                   <div className='mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4'>
@@ -469,14 +581,21 @@ export default function Purchase() {
                               // href={product.href}
                               className='font-medium text-gray-700 hover:text-gray-800'
                             >
-                              {data.name}
+                              Name: {data.name}
                             </a>
                           </h4>
                           <p className='mt-1 text-sm text-gray-500'>
-                            {data.description}
+                            Description: {data.description}
                           </p>
                           <p className='mt-1 text-sm text-gray-500'>
-                            Expiry: {data.expiryTimestamp}
+                            Expiry:{' '}
+                            {data.expiryTimestamp === 0 ? (
+                              <p className='inline'>No expiry</p>
+                            ) : (
+                              <span className='inline'>
+                                {data.expiryDays}-days {data.expiryTimestamp}
+                              </span>
+                            )}
                           </p>
                         </div>
 
@@ -515,11 +634,10 @@ export default function Purchase() {
                     </dd>
                   </div>
                 </dl>
-
+                <p className='text-center text-red-400 mb-2'>{errorMessage}</p>
                 <div className='border-t border-gray-200 px-4 py-6 sm:px-6'>
                   <button
                     type='submit'
-                    onClick={purchase}
                     className='w-full rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50'
                   >
                     Confirm order

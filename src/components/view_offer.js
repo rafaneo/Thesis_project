@@ -1,6 +1,9 @@
 import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
-import { StarIcon } from '@heroicons/react/20/solid';
-import { RadioGroup } from '@headlessui/react';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ModalDialog from './elements/dialog/js/dialog';
@@ -10,6 +13,7 @@ import Web3 from 'web3';
 export default function ListingView(props) {
   const { id } = useParams();
   const [data, setData] = useState([]);
+  const [personInfo, setPersonInfo] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
   const [wallet, setWallet] = useState('');
   const navigate = useNavigate();
@@ -62,18 +66,32 @@ export default function ListingView(props) {
           state: transaction.state,
           owner: transaction.owner,
           offer: transaction.offer,
+          orderNumber: transaction.orderNumber,
           image: meta.data.image,
           name: meta.data.name,
           description: meta.data.description,
           selectedOptions: meta.data.selectedOptions,
         };
-
         setData(data);
         updateFetched(true);
       } catch (error) {
         console.error('Error fetching NFT:', error);
         // Handle error here
       }
+
+      try {
+        const response = await axios.get(
+          'http://192.168.1.159:8000/api/getOrder',
+          {
+            headers: {
+              'Order-Number': `${data.orderNumber}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+        console.log(response.data);
+        setPersonInfo(response.data);
+      } catch (error) {}
     };
 
     fetchData(); // Call the fetchData function when the component mounts
@@ -89,12 +107,11 @@ export default function ListingView(props) {
     });
 
     let owner = await contract.methods.ownerOf(id).call();
-    console.log(owner);
     let transaction = await contract.methods
       .acceptOffer(id)
       .send({ from: wallet, gas: estimate_gas });
 
-    // console.log(transaction);
+    console.log(transaction);
   };
 
   if (dataFetched === false) {
@@ -155,8 +172,8 @@ export default function ListingView(props) {
                   />
                 </div>
 
-                <div className='m-auto ml-7'>
-                  <h2 className='text-sm text-gray-500 mb-10'>
+                <div className='ml-7'>
+                  <h2 className='text-sm text-gray-500 mb-2'>
                     Owner:{' '}
                     <a
                       href={`https://etherscan.io/address/${data.owner}`}
@@ -174,21 +191,6 @@ export default function ListingView(props) {
                       {data.seller}
                     </a>
                   </h2>
-                  {data.offer !== EthreumNull ? (
-                    <h2 className='text-sm text-gray-500 mb-10'>
-                      Offer:{' '}
-                      <a
-                        href={`https://etherscan.io/address/${data.offer}`}
-                        className='inline hover:text-indigo-600 underline'
-                      >
-                        {data.seller}
-                      </a>
-                    </h2>
-                  ) : (
-                    <h2 className='text-sm text-gray-500 mb-10'>
-                      Offer: No offer
-                    </h2>
-                  )}
                   <h2 className='text-sm text-gray-500 mb-10'>
                     Expiry:{' '}
                     <p className='text-gray-800 inline'>
@@ -242,6 +244,47 @@ export default function ListingView(props) {
                     }}
                   />
                 </div>
+                {data.offer !== EthreumNull ? (
+                  <Accordion
+                    className='mt-2 '
+                    sx={{
+                      borderRadius: '10px',
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      aria-controls='panel1-content'
+                      id='panel1-header'
+                    >
+                      Customer Details
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <p className='text-sm mb-3'>
+                        Wallet Address:{' '}
+                        <a
+                          href={`https://etherscan.io/address/${personInfo.buyer}`}
+                          className='inline hover:text-indigo-600 underline'
+                        >
+                          {personInfo.buyer}
+                        </a>
+                      </p>
+                      <p>Email: {personInfo.email}</p>
+                      {personInfo.name !== '' || personInfo.surname !== '' ? (
+                        <p>
+                          Name: {personInfo.name} {personInfo.surname}
+                        </p>
+                      ) : null}
+
+                      <p>
+                        Address: {personInfo.country}, {personInfo.city},{' '}
+                        {personInfo.address}, Postal: {personInfo.postalCode}
+                      </p>
+                      {personInfo.phone !== '' ? (
+                        <p>Phone number: {personInfo.phone}</p>
+                      ) : null}
+                    </AccordionDetails>
+                  </Accordion>
+                ) : null}
               </div>
             </div>
           </div>
