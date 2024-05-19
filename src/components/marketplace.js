@@ -92,10 +92,13 @@ export default function Marketplace() {
     const items = await Promise.all(
       transaction.map(async i => {
         var token_meta_data = await contract.methods.tokenURI(i.tokenId).call();
-        let meta = await axios.get(token_meta_data);
+        let meta = await axios.get(token_meta_data, {
+          headers: {
+            withCredentials: false,
+          },
+        });
 
         meta = meta.data;
-
         let price = web3.utils.fromWei(i.price.toString(), 'ether');
         let updatedExpiry = await updateExpiry(i.tokenId);
         let item = {
