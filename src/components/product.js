@@ -80,11 +80,6 @@ export default function ListingView(props) {
   }, [id]);
 
   if (dataFetched === false) {
-    // setTimeout(() => {
-    //   if (dataFetched === false) {
-    //     navigate('/*');
-    //   }
-    // }, 5000);
     return <p className='text-center mt-10'>Loading...</p>;
   } else if ((dataFetched === true && data.state === 3) || data.state === 1) {
     navigate('/*');
