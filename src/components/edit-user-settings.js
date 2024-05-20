@@ -1,6 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useState, useEffect } from 'react';
+import Web3 from 'web3';
 
 const schema = yup
   .object({
@@ -16,6 +18,7 @@ const schema = yup
   .required();
 
 export default function EditUserSettings() {
+  const [userAccount, setUserAccount] = useState('');
   const {
     register,
     handleSubmit,
@@ -29,6 +32,19 @@ export default function EditUserSettings() {
       lastName: '',
     },
   });
+  const web3 = new Web3(window.ethereum);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        let accounts = await web3.eth.getAccounts();
+        let address = accounts[0];
+        setUserAccount(address);
+      } catch (e) {
+        console.error(e.message);
+      }
+    })();
+  }, []);
 
   const onSubmit = values => {
     // HANDLE UPDATE HERE
@@ -45,7 +61,7 @@ export default function EditUserSettings() {
             Wallet
           </h2>
           <p className='mt-1 text-sm leading-6 text-gray-600'>
-            This information cannot be changed. {JSON.stringify({ isDirty })}
+            This information cannot be changed.
           </p>
 
           <div className='grid grid-cols-1 mt-10 gap-x-6 gap-y-8 sm:grid-cols-6'>
@@ -59,10 +75,11 @@ export default function EditUserSettings() {
               <div className='mt-2'>
                 <input
                   disabled
+                  value={userAccount ?? ''}
                   type='text'
                   name='walletAddress'
                   id='walletAddress'
-                  className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                  className='px-2 block w-full rounded-md border-0 py-1.5 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
                 />
               </div>
             </div>
