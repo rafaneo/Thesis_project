@@ -123,24 +123,37 @@ export default function ListingView(props) {
   } else {
     return (
       <div className='bg-white'>
-        <div className='pb-16 pt-6 sm:pb-24 border-b-4'>
+        <div className='pb-16 pt-6 sm:pb-24'>
           <nav
             aria-label='Breadcrumb'
             className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'
           >
-            <ol className='flex items-center space-x-4'>
+            <ol role='list' className='flex items-center space-x-4'>
+              <li>
+                <div className='flex items-center'>
+                  <p className='mr-4 text-sm font-medium text-gray-900 capitalize'>
+                    {data.selectedOptions}
+                  </p>
+                  <svg
+                    viewBox='0 0 6 20'
+                    aria-hidden='true'
+                    className='h-5 w-auto text-gray-300'
+                  >
+                    <path
+                      d='M4.878 4.34H3.551L.27 16.532h1.327l3.281-12.19z'
+                      fill='currentColor'
+                    />
+                  </svg>
+                </div>
+              </li>
               <li className='text-sm'>
-                <p
-                  // href={data.image}
-                  aria-current='page'
-                  className='text-lg font-medium text-back hover:text-gray-600'
-                >
+                <p className='font-medium text-gray-500 hover:text-gray-600'>
                   {data.name}
                 </p>
               </li>
             </ol>
           </nav>
-          <div className='mx-auto mt-8 max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8 border p-5'>
+          <div className='mx-auto mt-8 max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8'>
             <div className='lg:grid lg:auto-rows-min lg:grid-cols-12 lg:gap-x-8'>
               <div className='lg:col-span-5 lg:col-start-8'>
                 <div className='flex justify-between'>
@@ -151,68 +164,25 @@ export default function ListingView(props) {
                     {data.price} TiDE
                   </p>
                 </div>
-                {/* Reviews */}
-                <div className='mt-4'>
-                  <h2 className='sr-only'>Reviews</h2>
-                  <div className='flex items-center'>
-                    <div
-                      aria-hidden='true'
-                      className='ml-4 text-sm text-gray-300'
-                    >
-                      ·
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Image gallery */}
-              <div className='grid grid-cols-2 mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0'>
-                <div>
+              <div className='mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0'>
+                <h2 className='sr-only'>Images</h2>
+
+                <div className='grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-3 lg:gap-8'>
                   <img
                     src={data.image}
-                    className='rounded-lg w-auto h-auto object-center object-cover'
+                    className='lg:col-span-2 lg:row-span-2 rounded-lg'
                   />
                 </div>
-
-                <div className='ml-7'>
-                  <h2 className='text-sm text-gray-500 mb-2'>
-                    Owner:{' '}
-                    <a
-                      href={`https://etherscan.io/address/${data.owner}`}
-                      className='inline hover:text-indigo-600 underline'
-                    >
-                      {data.owner}
-                    </a>
-                  </h2>
-                  <h2 className='text-sm text-gray-500 mb-10'>
-                    Seller:{' '}
-                    <a
-                      href={`https://etherscan.io/address/${data.seller}`}
-                      className='inline hover:text-indigo-600 underline'
-                    >
-                      {data.seller}
-                    </a>
-                  </h2>
-                  <h2 className='text-sm text-gray-500 mb-10'>
-                    Expiry:{' '}
-                    <p className='text-gray-800 inline'>
-                      {data.expiryDays === undefined ? null : (
-                        <span className='inline'>{data.expiryDays}-days </span>
-                      )}
-                      {data.expiryTimestamp}
-                    </p>
-                  </h2>
-                </div>
-                {/* <div className='grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-3 lg:gap-8'></div> */}
               </div>
 
-              {/* TODO Pull data based on order number  */}
-              <div className='lg:col-span-5'>
+              <div className='mt-4 lg:col-span-5 space-y-4'>
                 <form>
                   {data.offer !== EthreumNull ? (
                     <div>
                       <button
-                        type='submit'
                         onClick={acceptOffer}
                         className='flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
                       >
@@ -233,23 +203,67 @@ export default function ListingView(props) {
                         />
                       )}
                     </div>
-                  ) : null}
+                  ) : (
+                    <button
+                      disabled
+                      className={
+                        'flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-500'
+                      }
+                    >
+                      Awaiting Offers
+                    </button>
+                  )}
                 </form>
+
+                {/* Product details */}
                 <div className='mt-10'>
                   <h2 className='text-sm font-medium text-gray-900'>
                     Description
                   </h2>
 
                   <div
-                    className='prose prose-sm mt-4 text-gray-500 break-words'
-                    dangerouslySetInnerHTML={{
-                      __html: data.description,
-                    }}
+                    className='prose prose-sm mt-4 text-gray-500'
+                    dangerouslySetInnerHTML={{ __html: data.description }}
                   />
                 </div>
-                {data.offer !== EthreumNull ? (
+
+                <div className='mt-10 border-t border-gray-200 pt-8'>
+                  <h2 className='text-sm font-medium text-gray-900'>Owner</h2>
+
+                  <a
+                    href={`https://etherscan.io/address/${data.owner}`}
+                    className='prose prose-sm mt-4 text-gray-500 hover:text-indigo-600 underline'
+                    dangerouslySetInnerHTML={{ __html: data.owner }}
+                  />
+                </div>
+
+                <div className='mt-10'>
+                  <h2 className='text-sm font-medium text-gray-900'>Seller</h2>
+
+                  <a
+                    href={`https://etherscan.io/address/${data.seller}`}
+                    className='prose prose-sm mt-4 text-gray-500 hover:text-indigo-600 underline'
+                    dangerouslySetInnerHTML={{ __html: data.seller }}
+                  />
+                </div>
+
+                <div className='mt-10'>
+                  <h2 className='text-sm font-medium text-gray-900'>Expiry</h2>
+
+                  <p className='prose prose-sm text-gray-500'>
+                    {data.expiryTimestamp === 0 ? (
+                      <p className='inline'>No expiry</p>
+                    ) : (
+                      <span className='inline'>
+                        {data.expiryDays}-days {data.expiryTimestamp}
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {data.offer !== EthreumNull && (
                   <Accordion
-                    className='mt-2 '
+                    className='mt-2'
                     sx={{
                       borderRadius: '10px',
                     }}
@@ -287,7 +301,21 @@ export default function ListingView(props) {
                       ) : null}
                     </AccordionDetails>
                   </Accordion>
-                ) : null}
+                )}
+                {data.offer === EthreumNull && [0, 4].includes(data.state) && (
+                  <button
+                    onClick={() => 1}
+                    className={
+                      (data.state === 0
+                        ? 'bg-gray-600 hover:bg-gray-700'
+                        : 'bg-indigo-600 hover:bg-indigo-700') +
+                      ' flex w-full items-center justify-center rounded-md border border-transparent px-8 py-3 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+                    }
+                  >
+                    {data.state === 0 && 'Unlist'}
+                    {data.state === 4 && 'List'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

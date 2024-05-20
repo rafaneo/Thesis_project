@@ -66,7 +66,7 @@ export default function ListingView(props) {
           image: meta.data.image,
           name: meta.data.name,
           description: meta.data.description,
-          selectedOptions: meta.data.selectedOptions,
+          selectedOptions: meta.data.attributes.selectedOption.option_parent,
         };
         setData(data);
         updateFetched(true);
@@ -79,6 +79,9 @@ export default function ListingView(props) {
     fetchData(); // Call the fetchData function when the component mounts
   }, [id]);
 
+  const isOwner = data.seller === userAccount;
+  const hasOffer = data.offer !== EthreumNull;
+
   if (dataFetched === false) {
     return <p className='text-center mt-10'>Loading...</p>;
   } else if ((dataFetched === true && data.state === 3) || data.state === 1) {
@@ -86,24 +89,37 @@ export default function ListingView(props) {
   } else {
     return (
       <div className='bg-white'>
-        <div className='pb-16 pt-6 sm:pb-24 border-b-4'>
+        <div className='pb-16 pt-6 sm:pb-24'>
           <nav
             aria-label='Breadcrumb'
             className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'
           >
-            <ol className='flex items-center space-x-4'>
+            <ol role='list' className='flex items-center space-x-4'>
+              <li>
+                <div className='flex items-center'>
+                  <p className='mr-4 text-sm font-medium text-gray-900 capitalize'>
+                    {data.selectedOptions}
+                  </p>
+                  <svg
+                    viewBox='0 0 6 20'
+                    aria-hidden='true'
+                    className='h-5 w-auto text-gray-300'
+                  >
+                    <path
+                      d='M4.878 4.34H3.551L.27 16.532h1.327l3.281-12.19z'
+                      fill='currentColor'
+                    />
+                  </svg>
+                </div>
+              </li>
               <li className='text-sm'>
-                <p
-                  // href={data.image}
-                  aria-current='page'
-                  className='text-lg font-medium text-back hover:text-gray-600'
-                >
+                <p className='font-medium text-gray-500 hover:text-gray-600'>
                   {data.name}
                 </p>
               </li>
             </ol>
           </nav>
-          <div className='mx-auto mt-8 max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8 border p-5'>
+          <div className='mx-auto mt-8 max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8'>
             <div className='lg:grid lg:auto-rows-min lg:grid-cols-12 lg:gap-x-8'>
               <div className='lg:col-span-5 lg:col-start-8'>
                 <div className='flex justify-between'>
@@ -114,83 +130,84 @@ export default function ListingView(props) {
                     {data.price} TiDE
                   </p>
                 </div>
-                {/* Reviews */}
               </div>
 
-              <div className='grid grid-cols-2 mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0'>
-                <div>
+              {/* Image gallery */}
+              <div className='mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0'>
+                <h2 className='sr-only'>Images</h2>
+
+                <div className='grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-3 lg:gap-8'>
                   <img
                     src={data.image}
-                    className='rounded-lg w-auto h-auto object-center object-cover'
+                    className='lg:col-span-2 lg:row-span-2 rounded-lg'
                   />
                 </div>
-
-                <div className='m-auto ml-7'>
-                  <h2 className='text-sm text-gray-500 mb-10'>
-                    Owner:{' '}
-                    <a
-                      href={`https://etherscan.io/address/${data.owner}`}
-                      className='inline hover:text-indigo-600 underline'
-                    >
-                      {data.owner}
-                    </a>
-                  </h2>
-                  <h2 className='text-sm text-gray-500 mb-10'>
-                    Seller:{' '}
-                    <a
-                      href={`https://etherscan.io/address/${data.seller}`}
-                      className='inline hover:text-indigo-600 underline'
-                    >
-                      {data.seller}
-                    </a>
-                  </h2>
-                  <h2 className='text-sm text-gray-500 mb-10'>
-                    Expiry:{' '}
-                    <p className='text-gray-800 inline'>
-                      {data.expiryTimestamp === 0 ? (
-                        <p className='inline'>No expiry</p>
-                      ) : (
-                        <span className='inline'>
-                          {data.expiryDays}-days {data.expiryTimestamp}
-                        </span>
-                      )}
-                    </p>
-                  </h2>
-                </div>
               </div>
-              <div className='lg:col-span-5'>
-                {data.seller === userAccount ? (
+
+              <div className='mt-4 lg:col-span-5 space-y-4'>
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    navigate(`/product/${data.tokenId}/purchase`);
+                  }}
+                >
                   <button
-                    className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-gray-400 px-8 py-3 text-base font-medium text-white focus:outline-none'
-                    disabled
+                    type='submit'
+                    disabled={isOwner || hasOffer}
+                    className={
+                      'flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-500'
+                    }
                   >
-                    You are the owner of this product
+                    {isOwner && 'You own this product'}
+                    {hasOffer && 'Offer pending'}
+                    {!(isOwner || hasOffer) && 'Purchase Product'}
                   </button>
-                ) : data.offer !== EthreumNull ? (
-                  <button
-                    className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-gray-400 px-8 py-3 text-base font-medium text-white focus:outline-none'
-                    disabled
-                  >
-                    This product already has an offer
-                  </button>
-                ) : (
-                  <Link to={`/product/${data.tokenId}/purchase`}>
-                    <button className='flex w-full mt-5 items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                      Purchase Product
-                    </button>
-                  </Link>
-                )}
+                </form>
+
+                {/* Product details */}
                 <div className='mt-10'>
                   <h2 className='text-sm font-medium text-gray-900'>
                     Description
                   </h2>
 
                   <div
-                    className='prose prose-sm mt-4 text-gray-500 break-words'
-                    dangerouslySetInnerHTML={{
-                      __html: data.description,
-                    }}
+                    className='prose prose-sm mt-4 text-gray-500'
+                    dangerouslySetInnerHTML={{ __html: data.description }}
                   />
+                </div>
+
+                <div className='mt-10 border-t border-gray-200 pt-8'>
+                  <h2 className='text-sm font-medium text-gray-900'>Owner</h2>
+
+                  <a
+                    href={`https://etherscan.io/address/${data.owner}`}
+                    className='prose prose-sm mt-4 text-gray-500 hover:text-indigo-600 underline'
+                    dangerouslySetInnerHTML={{ __html: data.owner }}
+                  />
+                </div>
+
+                <div className='mt-10'>
+                  <h2 className='text-sm font-medium text-gray-900'>Seller</h2>
+
+                  <a
+                    href={`https://etherscan.io/address/${data.seller}`}
+                    className='prose prose-sm mt-4 text-gray-500 hover:text-indigo-600 underline'
+                    dangerouslySetInnerHTML={{ __html: data.seller }}
+                  />
+                </div>
+
+                <div className='mt-10'>
+                  <h2 className='text-sm font-medium text-gray-900'>Expiry</h2>
+
+                  <p className='prose prose-sm text-gray-500'>
+                    {data.expiryTimestamp === 0 ? (
+                      <p className='inline'>No expiry</p>
+                    ) : (
+                      <span className='inline'>
+                        {data.expiryDays}-days {data.expiryTimestamp}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
