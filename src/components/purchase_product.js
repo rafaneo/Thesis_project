@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { RadioGroup } from '@headlessui/react';
 import { CheckCircleIcon, TrashIcon } from '@heroicons/react/20/solid';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -16,19 +16,14 @@ const schema = yup
       .string()
       .email('Please enter a valid email address...')
       .required('Email is required!'),
-    firstName: yup
-      .string()
-      .required('First name is required!')
-      .min(2, 'First name must be at least 2 characters...'),
-    surname: yup
-      .string()
-      .required('Last name is required!')
-      .min(2, 'Last name must be at least 2 characters...'),
+    firstName: yup.string(),
+    surname: yup.string(),
     address: yup.string().required('Address is required!'),
     city: yup.string().required('City is required!'),
     countryField: yup.string().required('Country is required!'),
     postalCode: yup.string().required('Postal code is required!'),
     phone: yup.string(),
+    deliveryMethod: yup.string().required('Delivery method is required!'),
   })
   .required();
 const deliveryMethods = [
@@ -58,24 +53,14 @@ function classNames(...classes) {
 
 export default function Purchase() {
   const { id } = useParams();
-  const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(
-    deliveryMethods[0],
-  );
+  // const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(
+  //   deliveryMethods[0],
+  // );
 
   const [data, setData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
   const [userAccount, setUserAccount] = useState('');
-  const [formData, setFormData] = useState({
-    email: '',
-    name: '',
-    surname: '',
-    address: '',
-    country: 'Cyprus',
-    city: '',
-    apartment: '',
-    postalCode: '',
-    phone: '+357',
-  });
+
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
@@ -84,22 +69,21 @@ export default function Purchase() {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm({
     resolver: yupResolver(schema),
     mode: 'all',
     defaultValues: {
-      name: '',
-      description: '',
-      price: 1.0,
+      phone: '+357',
+      deliveryMethod: 1,
     },
   });
 
-  const handleChange = event => {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value,
-    });
-  };
+  const selectedDeliveryMethod = useMemo(
+    () => deliveryMethods.find(rec => rec.id === watch('deliveryMethod') ?? 1),
+    [watch('deliveryMethod')],
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,6 +99,8 @@ export default function Purchase() {
         const tokenURI = await contract.methods.tokenURI(id).call();
 
         let meta = await axios.get(tokenURI);
+
+        console.log({ meta });
 
         let price = web3.utils.fromWei(transaction.price.toString(), 'ether');
 
@@ -140,6 +126,7 @@ export default function Purchase() {
         };
 
         setData(data);
+        console.log(data);
         updateFetched(true);
       } catch (error) {
         console.error('Error fetching NFT:', error);
@@ -149,81 +136,73 @@ export default function Purchase() {
 
     fetchData(); // Call the fetchData function when the component mounts
   }, [id]);
-  const onSubmit = data => console.log(data);
 
-  const purchase = async e => {
-    e.preventDefault();
-    handleSubmit(onSubmit)();
+  const purchase = async formData => {
     setErrorMessage('');
     let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
     let tokenContract = new web3.eth.Contract(TideABI, TideAddress);
 
-    try {
-      const total_before_gas =
-        parseFloat(data.price) + parseFloat(selectedDeliveryMethod.price);
-
-      const approvalTx = await tokenContract.methods
-        .approve(ContractAddress, total_before_gas)
-        .send({
-          from: userAccount,
-        });
-      console.log('Approval transaction hash:', approvalTx.transactionHash);
-
-      const transaction = await contract.methods.makeOffer(id).send({
+    const total_before_gas =
+      parseFloat(data.price) + parseFloat(selectedDeliveryMethod.price);
+    console.log({ total_before_gas });
+    const approvalTx = await tokenContract.methods
+      .approve(ContractAddress, total_before_gas)
+      .send({
         from: userAccount,
-        gas: 300000, // Use the estimated gas
       });
-      console.log('Transaction:', transaction);
+    console.log('Approval transaction hash:', approvalTx.transactionHash);
 
-      try {
-        const order = {
-          email: formData.email,
-          name: formData.name,
-          surname: formData.surname,
-          seller: data.seller,
-          buyer: userAccount,
-          tokenId: id,
-          address: formData.address,
-          country: formData.country,
-          city: formData.city,
-          postalCode: formData.postalCode,
-          unit: formData.apartment,
-          delivery: selectedDeliveryMethod.title,
-          phone: formData.phone,
-          productCost: data.price,
-          total: total_before_gas,
-        };
+    const transaction = await contract.methods.makeOffer(id).send({
+      from: userAccount,
+      gas: 300000, // Use the estimated gas
+    });
+    console.log('Transaction:', transaction);
 
-        console.log('Order:', order);
-        const orderResponse = await axios.post(
-          'http://192.168.1.159:8000/api/createOrder',
-          order,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
+    try {
+      const order = {
+        email: formData.email,
+        name: formData.firstName,
+        surname: formData.surname,
+        seller: formData.seller,
+        buyer: userAccount,
+        tokenId: id,
+        address: formData.address,
+        country: formData.country,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        unit: formData.apartment,
+        delivery: selectedDeliveryMethod.title,
+        phone: formData.phone,
+        productCost: formData.price,
+        total: total_before_gas,
+      };
+
+      console.log('Order:', order);
+      const orderResponse = await axios.post(
+        'http://192.168.1.159:8000/api/createOrder',
+        order,
+        {
+          headers: {
+            'Content-Type': 'application/json',
           },
-        );
-        console.log('Order response:', orderResponse);
-      } catch (e) {
-        if (e.response.data.error == '1000') {
-          setErrorMessage('Invalid Request!');
-        } else if (
-          e.response.data.error >= 1001 &&
-          e.response.data.error <= 1014
-        ) {
-          setErrorMessage('Some of the fields are missing or invalid!');
-        } else if (e.response.data.error == 1015) {
-          setErrorMessage('There is already an order for this product!');
-        } else {
-          setErrorMessage('Something went wrong! Try again');
-        }
-      }
-      return true;
+        },
+      );
+      console.log('Order response:', orderResponse);
     } catch (e) {
-      console.log(e.data);
-      return false;
+      if (e.response.data.error == '1000') {
+        setErrorMessage('Invalid Request!');
+      } else if (
+        e.response.data.error >= 1001 &&
+        e.response.data.error <= 1014
+      ) {
+        setErrorMessage('Some of the fields are missing or invalid!');
+      } else if (e.response.data.error == 1015) {
+        setErrorMessage('There is already an order for this product!');
+      } else {
+        setErrorMessage('Something went wrong! Try again');
+      }
     }
+    return true;
   };
 
   if (dataFetched === false) {
@@ -242,7 +221,7 @@ export default function Purchase() {
 
           <form
             className='lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16'
-            onSubmit={e => purchase(e)}
+            onSubmit={handleSubmit(purchase)}
           >
             <div>
               <div>
@@ -261,9 +240,7 @@ export default function Purchase() {
                       type='text'
                       id='email'
                       name='email'
-                      value={formData.email}
                       {...register('email')}
-                      onChange={handleChange}
                       className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
                     />
                     {errors.email?.message && (
@@ -293,14 +270,12 @@ export default function Purchase() {
                         type='text'
                         id='name'
                         name='name'
-                        value={formData.name}
-                        {...register('name')}
-                        onChange={handleChange}
+                        {...register('firstName')}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
-                      {errors.name?.message && (
+                      {errors.firstName?.message && (
                         <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
-                          {errors.name.message}
+                          {errors.firstName.message}
                         </p>
                       )}
                     </div>
@@ -318,9 +293,7 @@ export default function Purchase() {
                         type='text'
                         id='surname'
                         name='surname'
-                        value={formData.surname}
                         {...register('surname')}
-                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
                       {errors.surname?.message && (
@@ -343,9 +316,7 @@ export default function Purchase() {
                           type='text'
                           id='address'
                           name='address'
-                          value={formData.address}
                           {...register('address')}
-                          onChange={handleChange}
                           className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
                         />
                         {errors.address?.message && (
@@ -369,9 +340,7 @@ export default function Purchase() {
                         type='text'
                         id='apartment'
                         name='apartment'
-                        value={formData.apartment}
                         {...register('apartment')}
-                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
                       {errors.apartment?.message && (
@@ -394,9 +363,7 @@ export default function Purchase() {
                         type='text'
                         id='city'
                         name='city'
-                        value={formData.city}
                         {...register('city')}
-                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
                       {errors.city?.message && (
@@ -418,8 +385,7 @@ export default function Purchase() {
                         <select
                           id='country'
                           name='country'
-                          value={formData.country}
-                          onChange={handleChange}
+                          {...register('countryField')}
                           autoComplete='country-name'
                           className='block w-full rounded-md border border-gray-200 shadow-xl bg-white focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                         >
@@ -446,9 +412,7 @@ export default function Purchase() {
                         type='text'
                         id='postalCode'
                         name='postalCode'
-                        value={formData.postalCode}
                         {...register('postalCode')}
-                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl bg-white focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
                       {errors.postalCode?.message && (
@@ -471,9 +435,7 @@ export default function Purchase() {
                         type='text'
                         id='phone'
                         name='phone'
-                        value={formData.phone}
                         {...register('phone')}
-                        onChange={handleChange}
                         className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
                       />
                       {errors.phone?.message && (
@@ -488,8 +450,8 @@ export default function Purchase() {
 
               <div className='mt-10 border-t border-gray-200 pt-10'>
                 <RadioGroup
-                  value={selectedDeliveryMethod}
-                  onChange={setSelectedDeliveryMethod}
+                  {...register('deliveryMethod')}
+                  onChange={v => setValue('deliveryMethod', v)}
                 >
                   <RadioGroup.Label className='text-lg font-medium text-gray-900'>
                     Delivery method <p className='inline text-red-600'>*</p>
@@ -499,7 +461,7 @@ export default function Purchase() {
                     {deliveryMethods.map(deliveryMethod => (
                       <RadioGroup.Option
                         key={deliveryMethod.id}
-                        value={deliveryMethod}
+                        value={deliveryMethod.id}
                         className={({ checked, active }) =>
                           classNames(
                             checked ? 'border-transparent' : 'border-gray-300',
@@ -622,14 +584,14 @@ export default function Purchase() {
                   <div className='flex items-center justify-between'>
                     <dt className='text-sm'>Shipping</dt>
                     <dd className='text-sm font-medium text-gray-900'>
-                      {selectedDeliveryMethod.price} TiDE
+                      {selectedDeliveryMethod?.price} TiDE
                     </dd>
                   </div>
                   <div className='flex items-center justify-between border-t border-gray-200 pt-6'>
                     <dt className='text-base font-medium'>Total</dt>
                     <dd className='text-base font-medium text-gray-900'>
                       {parseFloat(data.price) +
-                        parseFloat(selectedDeliveryMethod.price)}{' '}
+                        parseFloat(selectedDeliveryMethod?.price)}{' '}
                       TiDE
                     </dd>
                   </div>
