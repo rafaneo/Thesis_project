@@ -228,7 +228,8 @@ export default function ListingView(props) {
                         <ModalDialog
                           title='Are you sure you want to decline the offer?'
                           text='Decline'
-                          buttonText='Cancel'
+                          buttonText='Decline'
+                          onConfirm={() => navigate('/my_listings')}
                         />
                       )}
                     </div>
