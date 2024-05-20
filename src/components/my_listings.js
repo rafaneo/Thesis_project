@@ -4,9 +4,11 @@ import { GetIpfsUrlFromPinata } from './utils';
 import { useState } from 'react';
 import axios from 'axios';
 import Web3 from 'web3';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function MyListings() {
   // const { navigate, state } = useLocation();
+  const [filter, setFilter] = useState('');
   const [data, updateData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
@@ -70,13 +72,32 @@ export default function MyListings() {
   if (!dataFetched) getNFTData();
   return (
     <div className='px-4 sm:px-6 lg:px-8'>
-      <div className='sm:flex sm:items-center mt-3'>
-        <div className='sm:flex-auto mt-4'>
+      <div className='sm:flex sm:items-center mt-6'>
+        <div className='sm:flex-auto '>
           <p className='text-2xl font-semibold leading-6 text-gray-900'>
             My Listings
           </p>
         </div>
-        <div className='mt-4 sm:ml-16 sm:mt-0 sm:flex-none'>
+        <div className='flex items-center max-w-xs sm:max-w-md w-full'>
+          <label htmlFor='simple-search' className='sr-only'>
+            Search
+          </label>
+          <div className='relative w-full inline-flex'>
+            <MagnifyingGlassIcon
+              className='absolute left-1 top-2 h-3 w-3 sm:h-6 sm:w-6'
+              aria-hidden='true'
+            />
+            <input
+              type='text'
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              className='bg-gray-50 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-7 p-2 '
+              placeholder='Search items...'
+              required
+            />
+          </div>
+        </div>
+        <div className='mt-4 ml-2 sm:mt-0 sm:flex-none'>
           <button
             type='button'
             onClick={handleClick}
@@ -88,105 +109,81 @@ export default function MyListings() {
       </div>
       <div className='mt-8 flow-root'>
         <div className='-mx-4 -my-2 overflow-x-auto relative sm:-mx-6 lg:-mx-8'>
-          <div className='pb-4 bg-white dark:bg-gray-900 ml-[16%]'>
-            <label htmlFor='table-search' className='sr-only'>
-              Search
-            </label>
-            <div className='relative mt-1'>
-              <div className='absolute inset-y-0 rtl:inset-r-0 start-0 flex items-center ps-3 pointer-events-none'>
-                <svg
-                  className='w-4 h-4 text-gray-500 dark:text-gray-400'
-                  aria-hidden='true'
-                  xmlns='http://www.w3.org/2000/svg'
-                  fill='none'
-                  viewBox='0 0 20 20'
-                >
-                  <path
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    d='m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z'
-                  />
-                </svg>
-              </div>
-              <input
-                type='text'
-                id='table-search'
-                className='block pt-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
-                placeholder='Search for items'
-              />
-            </div>
-          </div>
-          <div className='inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8 flex justify-center'>
-            <table className='min-w-[70%] divide-y divide-gray-300'>
-              <thead>
+          <div className='relative overflow-x-auto min-w-full py-2 align-middle sm:px-6 lg:px-8 flex justify-center'>
+            <table className='w-full text-sm text-left rtl:text-right text-gray-500'>
+              <thead className='text-xs text-gray-700 uppercase bg-gray-200'>
                 <tr>
-                  <th className='pl-10 text-center'>{''}</th>
-                  <th
-                    scope='col'
-                    className='py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0'
-                  >
-                    Listing Name
+                  <th scope='col' className='px-6 py-3'>
+                    #
                   </th>
-                  <th
-                    scope='col'
-                    className='px-3 py-3.5 text-left text-sm font-semibold text-gray-900'
-                  >
+                  <th scope='col' className='px-6 py-3'>
+                    Order Name
+                  </th>
+                  <th scope='col' className='px-6 py-3'>
                     Price
                   </th>
-                  <th
-                    scope='col'
-                    className='px-3 py-3.5 text-left text-sm font-semibold text-gray-900'
-                  >
+                  <th scope='col' className='px-6 py-3'>
                     Expiry Date
                   </th>
-                  <th
-                    scope='col'
-                    className='px-3 py-3.5 text-left text-sm font-semibold text-gray-900'
-                  >
+                  <th scope='col' className='px-6 py-3'>
                     Description
                   </th>
-                  <th scope='col' className='relative py-3.5 pl-3 pr-4 sm:pr-0'>
-                    <span className='sr-only'>Edit</span>
+                  <th scope='col' className='px-6 py-3'>
+                    Image
+                  </th>
+                  <th scope='col' className='px-6 py-3'>
+                    Status
                   </th>
                 </tr>
               </thead>
-              <tbody className='divide-y divide-gray-200'>
-                {data.map((nft, key) => (
-                  <tr key={nft.tokenId}>
-                    <td className='whitespace-nowrap text-sm font-medium text-gray-900 sm:pl-0'>
-                      {key + 1}
-                    </td>
-                    <td
-                      style={truncateStyle}
-                      className='whitespace-nowrap text-sm font-medium text-gray-900 sm:pl-0'
+              <tbody className='bg-gray-50'>
+                {data
+                  .filter(rec => rec.name.includes(filter))
+                  .map((nft, key) => (
+                    <tr
+                      key={key}
+                      className={key === data.length - 1 ? '' : ' border-b'}
+                      onClick={() => navigate(`/view_listing/${nft.tokenId}`)}
                     >
-                      <div className='flex min-w-0 gap-x-4'>
+                      <th
+                        scope='row'
+                        className='px-6 py-4 font-medium text-gray-900 whitespace-nowrap cursor-pointer'
+                      >
+                        {key + 1}
+                      </th>
+                      <td className='px-6 py-4 max-w-[225px] truncate cursor-pointer'>
+                        {nft.name}
+                      </td>
+                      <td className='px-6 py-4 max-w-[225px] truncate cursor-pointer'>
+                        {nft.price} TiDE
+                      </td>
+                      <td className='px-6 py-4 max-w-[225px] truncate cursor-pointer'>
+                        {nft.expiry === 0 ? 'No Expiry' : nft.expiry}
+                      </td>
+                      <td className='px-6 py-4 max-w-[225px] truncate cursor-pointer'>
+                        {nft.description}
+                      </td>
+                      <td className='p-1 max-w-[225px] truncate cursor-pointer'>
                         <img
-                          className='h-[60px] w-[60px] flex-none rounded-sm bg-gray-50'
+                          className='h-[60px] w-[60px] flex-none rounded-sm bg-gray-50 grayscale-[80%]'
                           src={nft.image}
                           alt=''
                         />
-                        <p className='text-sm font-semibol mt-4 text-gray-900 '>
-                          {nft.name}
-                        </p>
-                      </div>
-                    </td>
-                    <td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
-                      {nft.price} TiDE
-                    </td>
-                    <td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
-                      {nft.expiry === 0 ? 'No Expiry' : nft.expiry}
-                    </td>
-                    <td
-                      aria-hidden='true'
-                      style={truncateStyle}
-                      className='whitespace-nowrap px-1 py-4 text-sm text-gray-500'
-                    >
-                      {nft.description}
-                    </td>
-                    <td className='relative whitespace-nowrap py-4 text-right text-sm font-medium sm:pr-0 inline'>
+                      </td>
+                      <td className='px-6 py-4 max-w-[225px] truncate cursor-pointer'>
+                        {nft.state === 1 ? 'Active Offer' : 'Listed'}
+                      </td>
+                    </tr>
+                  ))}
+                {data.filter(rec => rec.name.includes(filter)).length === 0 && (
+                  <td className='px-6 py-4' colSpan={7}>
+                    No records found...
+                  </td>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* <td className='relative whitespace-nowrap py-4 text-right text-sm font-medium sm:pr-0 inline'>
                       <div className='flex inline'>
                         {parseInt(nft.state) === 1 ? (
                           <span className='bg-red-100 text-red-800 text-xs font-medium me-5 px-4 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300'>
@@ -202,12 +199,7 @@ export default function MyListings() {
                           </p>
                         </Link>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </td> */}
         </div>
       </div>
     </div>
