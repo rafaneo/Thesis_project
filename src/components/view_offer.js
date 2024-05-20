@@ -112,6 +112,8 @@ export default function ListingView(props) {
       .send({ from: wallet, gas: estimate_gas });
 
     console.log(transaction);
+
+    navigate('/my_listings');
   };
 
   if (dataFetched === false) {

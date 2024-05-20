@@ -188,6 +188,7 @@ export default function Purchase() {
         },
       );
       console.log('Order response:', orderResponse);
+      navigate('/order_history');
     } catch (e) {
       if (e.response.data.error == '1000') {
         setErrorMessage('Invalid Request!');

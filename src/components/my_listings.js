@@ -165,7 +165,7 @@ export default function MyListings() {
                       </td>
                       <td className='p-1 max-w-[225px] truncate cursor-pointer'>
                         <img
-                          className='h-[60px] w-[60px] flex-none rounded-sm bg-gray-50 grayscale-[80%]'
+                          className='h-[60px] w-[60px] flex-none rounded-sm bg-gray-50'
                           src={nft.image}
                           alt=''
                         />
