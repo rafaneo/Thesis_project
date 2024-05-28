@@ -7,7 +7,7 @@ import { uploadFileToIPFS, uploadJSONToIPFS } from './pinata';
 import NFTUpload from './elements/nft_upload/js/nft_upload';
 import { Web3 } from 'web3';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { useForm } from 'react-hook-form';
+import { set, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { SHA256 } from 'crypto-js';
@@ -29,25 +29,6 @@ const schema = yup
       .min(1.0, 'Price must be greater than 0')
       .max(1000000, 'Price must be less than 1000000')
       .positive(),
-    file: yup
-      .mixed()
-      .test('fileSize', 'File is too large', value => {
-        if (!value) return true;
-        return value[0].size <= 2000000;
-      })
-      .test(
-        'fileType',
-        'Unsupported file format (only png,jpge and jpg allowed)',
-        value => {
-          if (!value) return true;
-          return (
-            value[0].type === 'image/jpeg' ||
-            value[0].type === 'image/png' ||
-            value[0].type === 'image/jpg'
-          );
-        },
-      )
-      .required('You must upload a picture'),
   })
   .required();
 
@@ -186,18 +167,47 @@ export default function CreateListing() {
     }
   }
 
+  function checkSelection() {
+    if (selection.expiryState == 0) {
+      if (selection.expiry === 0) {
+        setUploadMessage([
+          'failed',
+          'Please enter a number of days for expiry',
+        ]);
+        return -1;
+      } else {
+        setUploadMessage(['success', '']);
+      }
+    } else if (selection.expiryState === 1) {
+      if (selection.expiryTimeStamp === '0') {
+        setUploadMessage(['failed', 'Please select an expiry date']);
+        return -1;
+      } else {
+        setUploadMessage(['success', '']);
+      }
+    }
+  }
+
   async function uploadMetadataToIPFS(data) {
-    const { name, description, price } = data; //TODO
+    const { name, description, price } = data;
+    const listingStatus = 'Listed';
+    console.log('selection:', selection);
+    if (checkSelection() === -1) {
+      return -1;
+    }
     if (!name || !price) {
       return -1;
     }
+
     const nftJSON = {
       name,
       description,
       price,
+      listingStatus,
       image: fileUrl,
       attributes: selection,
     };
+    console.log('nftJSON:', nftJSON);
     try {
       const response = await uploadJSONToIPFS(nftJSON);
       if (response.success === true) {
@@ -207,13 +217,8 @@ export default function CreateListing() {
       console.log('error uploading JSON metadata:', e);
     }
   }
-  const purchase = async formData => {
-    console.log('formData:', formData);
-    return true;
-  };
 
   const listNFT = async data => {
-    console.log('data:', data);
     if (file === null || file === undefined || file.length === 0) {
       setNoFileMsg('Please upload a file');
       return;
@@ -221,38 +226,45 @@ export default function CreateListing() {
     try {
       setNoFileMsg('');
       if (fileUpload) {
-        const metadataURL = await uploadMetadataToIPFS();
+        const metadataURL = await uploadMetadataToIPFS(data);
         console.log('metadataURL:', metadataURL);
 
         if (metadataURL === -1) {
-          setTimeout(() => {
-            setShowSpinner(false);
-          }, 2000);
-          setUploadMessage(['failed', 'Error uploading product']);
+          // setTimeout(() => {
+          //   setShowSpinner(false);
+          // }, 2000);
           return;
         }
 
         const [signer] = await web3.eth.getAccounts();
-        disableButton();
-        setShowSpinner(true);
-        setUploadMessage([
-          '',
-          'Uploading NFT(might take 5 mins).. please dont click anything!',
-        ]);
+        // setTimeout(() => {
+        //   disableButton();
+        //   setShowSpinner(true);
+        //   setUploadMessage([
+        //     '',
+        //     'Uploading NFT(might take 5 mins).. please dont click anything!',
+        //   ]);
+        // }, 60000);
 
         let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
         const price_val = web3.utils.toWei(data.price, 'ether');
 
         let listingPrice = await contract.methods.getListingPrice().call();
-        let nonce = await web3.eth.getTransactionCount(signer);
+        let nonce = await web3.eth.getTransactionCount(signer, 'pending');
+
         console.log('nonce', nonce);
-        let transaction = await contract.methods
-          .createToken(metadataURL, price_val, data.expiryTimeStamp)
+
+        console.log(selection.expiryState);
+        console.log(selection.expiryTimeStamp);
+        console.log(selection.expiry);
+        return;
+        await contract.methods
+          .createToken(metadataURL, price_val, selection.expiryState)
           .send({
             from: signer,
             value: listingPrice,
             gas: 3000000,
-            gasPrice: web3.utils.toWei('100', 'gwei'), // Adjust the gas price here
+            nonce: nonce,
           })
           .on('transactionHash', function (hash) {
             console.log('hash', hash);
@@ -270,8 +282,7 @@ export default function CreateListing() {
             setShowSpinner(false);
           }, 2000);
           setUploadMessage(['success', 'Product uploaded successfully!']);
-          //TODO TO reset the values of the from
-          navigate('/'); // TODO change this to should listed nfts in the future!
+          navigate('/my_listings');
         } else {
           setTimeout(() => {
             setShowSpinner(false);
@@ -288,7 +299,7 @@ export default function CreateListing() {
         return;
       }
     } catch (e) {
-      alert('Upload error' + e);
+      setUploadMessage(['failed', 'Error uploading product']);
     }
   };
 
@@ -297,7 +308,7 @@ export default function CreateListing() {
       <div className='mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-3xl lg:px-8'>
         <form
           className='lg:gap-x-12 xl:gap-x-16'
-          onSubmit={handleSubmit(purchase)}
+          onSubmit={handleSubmit(listNFT)}
         >
           <div className='border border-1 p-9'>
             <div>

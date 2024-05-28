@@ -6,63 +6,54 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { TextField } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
+import { set } from 'react-hook-form';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
 function RadioSeries({ options, onSelectionChange }) {
-  const [selectedOption, setselectedOption] = useState(options[0]);
-  const [expiry, setExpiry] = useState('');
+  const [selectedOption, setSelectedOption] = useState(options[0]);
+  const [expiry, setExpiry] = useState(0);
   const [expiryState, setExpiryState] = useState(0);
-  const [expiryTimeStamp, setExpiryTimeStamp] = useState('0');
+  const [expiryTimeStamp, setExpiryTimeStamp] = useState(0);
   const [radioValue, setRadioValue] = useState('on-purchase');
   const [expiryMessage, setExpiryMessage] = useState('');
 
   useEffect(() => {
-    setselectedOption(options[0]);
+    setSelectedOption(options[0]);
     setExpiryTimeStamp('0');
-    setExpiry('');
+    setExpiry(0);
+    setExpiryState(0);
   }, [options]);
 
   useEffect(() => {
-    onSelectionChange(selection);
+    onSelectionChange({
+      selectedOption,
+      expiry,
+      expiryTimeStamp,
+      expiryState,
+      radioValue,
+    });
   }, [selectedOption, expiry, expiryTimeStamp, radioValue]);
-
-  var selection = {
-    selectedOption: selectedOption,
-    expiry: expiry,
-    expiryTimeStamp: expiryTimeStamp,
-    radioValue: radioValue,
-  };
-
-  function handleExpiryRadioChange(e) {
-    setRadioValue(e.target.value);
-    setExpiryMessage('');
-    setExpiry('');
-  }
-
-  function getTimeStampOnPurchase(days) {
-    if (handleExpiryOnPurchaseChange(days) === 0) return 0;
-    if (days == 'NaN' || days === '') {
-      days = 0;
-    }
-    const expiry_days = parseInt(days);
-    console.log(days);
-    return expiry_days;
-  }
 
   function getTimeStampOnDate(date) {
     if (handleExpiryOnDateChange(date) === 0) return 0;
     const futureDate = new Date(date);
     const futureTimestamp = futureDate.getTime();
-    console.log(futureTimestamp);
     return futureTimestamp;
   }
 
+  const handleRadioChange = value => {
+    setRadioValue(value);
+    setExpiry(0);
+    setExpiryState(0);
+    setExpiryTimeStamp('0');
+    setExpiryMessage('');
+  };
+
   const handleExpiryOnDateChange = date => {
-    var current_date = new Date();
-    console.log(date);
+    const current_date = new Date();
     if (date === '') {
       setExpiryMessage('');
       setExpiryTimeStamp('');
@@ -70,7 +61,6 @@ function RadioSeries({ options, onSelectionChange }) {
     }
     if (date <= new Date()) {
       setExpiryMessage('Expiry date must be in the future');
-      console.log('date is in the past');
       return 0;
     } else if (
       date >= current_date.setFullYear(current_date.getFullYear() + 1)
@@ -78,7 +68,6 @@ function RadioSeries({ options, onSelectionChange }) {
       setExpiryMessage(
         'Expiry date cannot be more than one year in the future',
       );
-      console.log('date is more than a year in the future');
       return 0;
     }
     setExpiryMessage('');
@@ -86,30 +75,56 @@ function RadioSeries({ options, onSelectionChange }) {
   };
 
   const handleExpiryOnPurchaseChange = days => {
-    const expiry = parseInt(days);
-    if (/^\d*$/.test(days)) {
-      if (expiry === '') {
+    try {
+      if (days === '') {
         setExpiryMessage('');
-        setExpiryTimeStamp('');
-      } else if (expiry <= 0) {
+        return 1;
+      }
+      const expiry = parseInt(days);
+      if (expiry <= 0) {
         setExpiryMessage('Expiry must be a positive number');
+        return 0;
       } else if (expiry > 365) {
         setExpiryMessage('Expiry must be less than 365 days');
+        return 0;
       } else if (expiry % 1 !== 0) {
         setExpiryMessage('Expiry must be an integer');
+        return 0;
       } else {
         setExpiryMessage('');
       }
+    } catch (error) {
+      setExpiryMessage('Expiry must be a number');
     }
+  };
+
+  const handleOnPurchaseChange = days => {
+    if (handleExpiryOnPurchaseChange(days) === 0) return;
+    setExpiry(days);
+    setExpiryState(0);
+    setExpiryTimeStamp(0);
+  };
+
+  const handleOnDateChange = date => {
+    setExpiryTimeStamp(getTimeStampOnDate(date));
+    setExpiry(0);
+    setExpiryState(1);
+  };
+  const handleOtherSelections = option => {
+    setSelectedOption(option);
+    setExpiry('');
+    setExpiryState(2);
+    setExpiryTimeStamp('0');
+    setExpiryMessage('');
   };
 
   return (
     <div className='border-gray-200'>
-      <RadioGroup value={selectedOption} onChange={setselectedOption}>
+      <RadioGroup value={selectedOption} onChange={handleOtherSelections}>
         <div className='mt-4 grid grid-cols-3 w-full px-[5%] sm:grid-cols-3 sm:gap-x-2 sm:w-full'>
           {options.map(option =>
             option.field_type === 'date' ? (
-              <div className='col-start-2'>
+              <div className='col-start-2' key={option.id}>
                 <div className='flex mb-4'>
                   <div className='flex items-center me-4'>
                     <input
@@ -117,7 +132,7 @@ function RadioSeries({ options, onSelectionChange }) {
                       type='radio'
                       value='on-purchase'
                       name='expiry-date-radio-group'
-                      onChange={handleExpiryRadioChange}
+                      onChange={() => handleRadioChange('on-purchase')}
                       checked={radioValue === 'on-purchase'}
                       className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300'
                     />
@@ -134,9 +149,9 @@ function RadioSeries({ options, onSelectionChange }) {
                       type='radio'
                       value='on-date'
                       name='expiry-date-radio-group'
-                      onChange={handleExpiryRadioChange}
+                      onChange={() => handleRadioChange('on-date')}
                       checked={radioValue === 'on-date'}
-                      className='w-4 h-4  text-blue-600 bg-gray-100 border-gray-300'
+                      className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300'
                     />
                     <label
                       htmlFor='on-date-radio'
@@ -152,10 +167,7 @@ function RadioSeries({ options, onSelectionChange }) {
                       <DateTimePicker
                         label='Expiry Date'
                         sx={{ width: '26ch' }}
-                        onChange={
-                          (e => setExpiryTimeStamp(getTimeStampOnDate(e)),
-                          setExpiryState(1))
-                        }
+                        onChange={handleOnDateChange}
                       />
                     </LocalizationProvider>
                     {expiryMessage && (
@@ -174,10 +186,9 @@ function RadioSeries({ options, onSelectionChange }) {
                       }}
                       onChange={e => {
                         const inputValue = e.target.value;
-                        setExpiry(inputValue);
-                        setExpiryState(0);
+                        handleOnPurchaseChange(inputValue);
                       }}
-                      value={expiry}
+                      value={expiry === 0 ? '' : expiry}
                       focused
                     />
                     {expiryMessage && (
@@ -187,9 +198,8 @@ function RadioSeries({ options, onSelectionChange }) {
                 )}
               </div>
             ) : (
-              <div className='w-[90%] mb-5'>
+              <div className='w-[90%] mb-5' key={option.id}>
                 <RadioGroup.Option
-                  key={option.id}
                   value={option}
                   className={({ checked, active }) =>
                     classNames(

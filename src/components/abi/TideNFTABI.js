@@ -1,4 +1,4 @@
-export const ContractAddress = '0x4CDFF0b6fA138344F1C091A7FfC12E8cEbfA4430';
+export const ContractAddress = '0x4EaA7857B76a4E2D82161B4329418A9eaF134022';
 export const EthreumNull = '0x0000000000000000000000000000000000000000';
 export const TIDEABI = [
   {
@@ -60,31 +60,6 @@ export const TIDEABI = [
       },
     ],
     name: 'ApprovalForAll',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'message',
-        type: 'string',
-      },
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'value',
-        type: 'string',
-      },
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'value2',
-        type: 'string',
-      },
-    ],
-    name: 'DebugInfo',
     type: 'event',
   },
   {
@@ -195,7 +170,13 @@ export const TIDEABI = [
       {
         indexed: false,
         internalType: 'uint256',
-        name: 'expiry',
+        name: 'expiryDays',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'expiryTimestamp',
         type: 'uint256',
       },
       {
@@ -359,7 +340,12 @@ export const TIDEABI = [
       },
       {
         internalType: 'uint256',
-        name: 'expiry',
+        name: 'expiryDays',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'expiryTimestamp',
         type: 'uint256',
       },
       {
@@ -473,7 +459,12 @@ export const TIDEABI = [
           },
           {
             internalType: 'uint256',
-            name: 'expiry',
+            name: 'expiryDays',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiryTimestamp',
             type: 'uint256',
           },
           {
@@ -621,7 +612,12 @@ export const TIDEABI = [
           },
           {
             internalType: 'uint256',
-            name: 'expiry',
+            name: 'expiryDays',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiryTimestamp',
             type: 'uint256',
           },
           {
@@ -712,7 +708,12 @@ export const TIDEABI = [
           },
           {
             internalType: 'uint256',
-            name: 'expiry',
+            name: 'expiryDays',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiryTimestamp',
             type: 'uint256',
           },
           {
@@ -777,7 +778,12 @@ export const TIDEABI = [
           },
           {
             internalType: 'uint256',
-            name: 'expiry',
+            name: 'expiryDays',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiryTimestamp',
             type: 'uint256',
           },
           {
@@ -861,7 +867,12 @@ export const TIDEABI = [
           },
           {
             internalType: 'uint256',
-            name: 'expiry',
+            name: 'expiryDays',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiryTimestamp',
             type: 'uint256',
           },
           {
@@ -932,7 +943,12 @@ export const TIDEABI = [
           },
           {
             internalType: 'uint256',
-            name: 'expiry',
+            name: 'expiryDays',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiryTimestamp',
             type: 'uint256',
           },
           {
@@ -993,25 +1009,6 @@ export const TIDEABI = [
       },
     ],
     name: 'isApprovedForAll',
-    outputs: [
-      {
-        internalType: 'bool',
-        name: '',
-        type: 'bool',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'isExpired',
     outputs: [
       {
         internalType: 'bool',

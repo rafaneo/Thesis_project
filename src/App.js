@@ -51,9 +51,7 @@ function App() {
           {isLoggedIn && (
             <>
               {/*This is for testing */}
-
               <Route path='/view_token_data/' element={<ViewTokenData />} />
-
               <Route path='/my_listings' element={<MyListings />} />
               <Route path='/create_listing' element={<CreateListing />} />
               <Route path='/product/:id' element={<Product />} />
