@@ -21,11 +21,16 @@ function RadioSeries({ options, onSelectionChange }) {
   const [expiryMessage, setExpiryMessage] = useState('');
 
   useEffect(() => {
+    console.log('parent rerender');
     setSelectedOption(options[0]);
-    setExpiryTimeStamp('0');
+    setExpiryTimeStamp(0);
     setExpiry(0);
     setExpiryState(0);
   }, [options]);
+
+  useEffect(() => {
+    if (selectedOption.option_parent !== 'rental') setExpiryState(2);
+  }, [selectedOption]);
 
   useEffect(() => {
     onSelectionChange({
@@ -33,9 +38,8 @@ function RadioSeries({ options, onSelectionChange }) {
       expiry,
       expiryTimeStamp,
       expiryState,
-      radioValue,
     });
-  }, [selectedOption, expiry, expiryTimeStamp, radioValue]);
+  }, [selectedOption, expiry, expiryTimeStamp, expiryState, radioValue]);
 
   function getTimeStampOnDate(date) {
     if (handleExpiryOnDateChange(date) === 0) return 0;
@@ -47,8 +51,8 @@ function RadioSeries({ options, onSelectionChange }) {
   const handleRadioChange = value => {
     setRadioValue(value);
     setExpiry(0);
-    setExpiryState(0);
-    setExpiryTimeStamp('0');
+    setExpiryState(value === 'on-purchase' ? 0 : 1); // this should change 0 ,1
+    setExpiryTimeStamp(0);
     setExpiryMessage('');
   };
 
@@ -110,17 +114,10 @@ function RadioSeries({ options, onSelectionChange }) {
     setExpiry(0);
     setExpiryState(1);
   };
-  const handleOtherSelections = option => {
-    setSelectedOption(option);
-    setExpiry('');
-    setExpiryState(2);
-    setExpiryTimeStamp('0');
-    setExpiryMessage('');
-  };
 
   return (
     <div className='border-gray-200'>
-      <RadioGroup value={selectedOption} onChange={handleOtherSelections}>
+      <RadioGroup value={selectedOption} onChange={setSelectedOption}>
         <div className='mt-4 grid grid-cols-3 w-full px-[5%] sm:grid-cols-3 sm:gap-x-2 sm:w-full'>
           {options.map(option =>
             option.field_type === 'date' ? (

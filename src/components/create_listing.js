@@ -29,6 +29,13 @@ const schema = yup
       .min(1.0, 'Price must be greater than 0')
       .max(1000000, 'Price must be less than 1000000')
       .positive(),
+    attributes: yup.object({
+      selectedOption: yup.number(),
+      expiry: yup.number(),
+      expiryTimeStamp: yup.number(),
+      expiryState: yup.number(),
+      radioValue: yup.string(),
+    }),
   })
   .required();
 
@@ -60,7 +67,6 @@ const consumableOptions = [
   },
 ];
 const ItemOptions = [
-  { name: 'Items' },
   {
     id: 1,
     name: 'Electronics',
@@ -114,6 +120,8 @@ export default function CreateListing() {
   const [fileUpload, setFileUpload] = useState(false);
   const [file, setFile] = useState(null);
   const [selection, setSelection] = useState('');
+
+  useEffect(() => console.log({ selection }), [selection]);
 
   useEffect(() => {
     const imageUpload = uploadNFTImage();
@@ -254,12 +262,14 @@ export default function CreateListing() {
 
         console.log('nonce', nonce);
 
-        console.log(selection.expiryState);
-        console.log(selection.expiryTimeStamp);
-        console.log(selection.expiry);
-        return;
         await contract.methods
-          .createToken(metadataURL, price_val, selection.expiryState)
+          .createToken(
+            metadataURL,
+            price_val,
+            selection.expiry,
+            selection.expiryTimeStamp,
+            selection.expiryState,
+          )
           .send({
             from: signer,
             value: listingPrice,
@@ -354,7 +364,7 @@ export default function CreateListing() {
                     id='description'
                     name='description'
                     {...register('description')}
-                    className='block rounded-md shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l w-80 h-20 resize-none border rounded-md px-3 py-2 transition-all duration-500 ease-in-out'
+                    className='block shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l w-80 h-20 resize-none border rounded-md px-3 py-2 transition-all duration-500 ease-in-out'
                   />
                   {errors.description?.message && (
                     <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>

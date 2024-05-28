@@ -1,4 +1,4 @@
-export const ContractAddress = '0x4EaA7857B76a4E2D82161B4329418A9eaF134022';
+export const ContractAddress = '0x3eeEEBF970E4921E4bFf0EF64409421041D1DA71';
 export const EthreumNull = '0x0000000000000000000000000000000000000000';
 export const TIDEABI = [
   {
