@@ -1,4 +1,4 @@
-export const ContractAddress = '0x4558fC8414f0971b2e5A6021d35DdaE34CbcBb75';
+export const ContractAddress = '0x4CDFF0b6fA138344F1C091A7FfC12E8cEbfA4430';
 export const EthreumNull = '0x0000000000000000000000000000000000000000';
 export const TIDEABI = [
   {
@@ -163,25 +163,6 @@ export const TIDEABI = [
     inputs: [
       {
         indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        indexed: false,
-        internalType: 'string',
-        name: 'orderNumber',
-        type: 'string',
-      },
-    ],
-    name: 'NFTOrderNumberUpdated',
-    type: 'event',
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
         internalType: 'address',
         name: 'previousOwner',
         type: 'address',
@@ -249,6 +230,12 @@ export const TIDEABI = [
       },
       {
         indexed: false,
+        internalType: 'enum TideTokenNFT.ExpiryState',
+        name: 'expiryState',
+        type: 'uint8',
+      },
+      {
+        indexed: false,
         internalType: 'bool',
         name: 'currentlyListed',
         type: 'bool',
@@ -281,6 +268,19 @@ export const TIDEABI = [
     ],
     name: 'Transfer',
     type: 'event',
+  },
+  {
+    inputs: [],
+    name: 'TokenExpiry',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [],
@@ -362,6 +362,11 @@ export const TIDEABI = [
         name: 'expiry',
         type: 'uint256',
       },
+      {
+        internalType: 'uint256',
+        name: 'expiryState',
+        type: 'uint256',
+      },
     ],
     name: 'createToken',
     outputs: [
@@ -372,6 +377,50 @@ export const TIDEABI = [
       },
     ],
     stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    name: 'currentBuyer',
+    outputs: [
+      {
+        internalType: 'address',
+        name: 'buyer',
+        type: 'address',
+      },
+      {
+        internalType: 'string',
+        name: 'Email',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'FullName',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'Phone',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'FullAddress',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'ShippingMethod',
+        type: 'string',
+      },
+    ],
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -395,9 +444,15 @@ export const TIDEABI = [
         type: 'uint256',
       },
     ],
-    name: 'expireNFT',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    name: 'generateOrderNumber',
+    outputs: [
+      {
+        internalType: 'string',
+        name: '',
+        type: 'string',
+      },
+    ],
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -447,6 +502,11 @@ export const TIDEABI = [
             type: 'uint8',
           },
           {
+            internalType: 'enum TideTokenNFT.ExpiryState',
+            name: 'expiryState',
+            type: 'uint8',
+          },
+          {
             internalType: 'bool',
             name: 'curentlyListed',
             type: 'bool',
@@ -474,6 +534,57 @@ export const TIDEABI = [
         internalType: 'address',
         name: '',
         type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'tokenId',
+        type: 'uint256',
+      },
+    ],
+    name: 'getBuyerDetails',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'address',
+            name: 'buyer',
+            type: 'address',
+          },
+          {
+            internalType: 'string',
+            name: 'Email',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
+            name: 'FullName',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
+            name: 'Phone',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
+            name: 'FullAddress',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
+            name: 'ShippingMethod',
+            type: 'string',
+          },
+        ],
+        internalType: 'struct TideTokenNFT.BuyerInfo',
+        name: '',
+        type: 'tuple',
       },
     ],
     stateMutability: 'view',
@@ -536,6 +647,11 @@ export const TIDEABI = [
           {
             internalType: 'enum TideTokenNFT.NFTState',
             name: 'state',
+            type: 'uint8',
+          },
+          {
+            internalType: 'enum TideTokenNFT.ExpiryState',
+            name: 'expiryState',
             type: 'uint8',
           },
           {
@@ -625,6 +741,11 @@ export const TIDEABI = [
             type: 'uint8',
           },
           {
+            internalType: 'enum TideTokenNFT.ExpiryState',
+            name: 'expiryState',
+            type: 'uint8',
+          },
+          {
             internalType: 'bool',
             name: 'curentlyListed',
             type: 'bool',
@@ -685,6 +806,11 @@ export const TIDEABI = [
             type: 'uint8',
           },
           {
+            internalType: 'enum TideTokenNFT.ExpiryState',
+            name: 'expiryState',
+            type: 'uint8',
+          },
+          {
             internalType: 'bool',
             name: 'curentlyListed',
             type: 'bool',
@@ -712,6 +838,71 @@ export const TIDEABI = [
         internalType: 'string',
         name: '',
         type: 'string',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getSoldNFTs',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'tokenId',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'price',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'expiry',
+            type: 'uint256',
+          },
+          {
+            internalType: 'address payable',
+            name: 'owner',
+            type: 'address',
+          },
+          {
+            internalType: 'address payable',
+            name: 'seller',
+            type: 'address',
+          },
+          {
+            internalType: 'address payable',
+            name: 'offer',
+            type: 'address',
+          },
+          {
+            internalType: 'string',
+            name: 'orderNumber',
+            type: 'string',
+          },
+          {
+            internalType: 'enum TideTokenNFT.NFTState',
+            name: 'state',
+            type: 'uint8',
+          },
+          {
+            internalType: 'enum TideTokenNFT.ExpiryState',
+            name: 'expiryState',
+            type: 'uint8',
+          },
+          {
+            internalType: 'bool',
+            name: 'curentlyListed',
+            type: 'bool',
+          },
+        ],
+        internalType: 'struct TideTokenNFT.ListedToken[]',
+        name: '',
+        type: 'tuple[]',
       },
     ],
     stateMutability: 'view',
@@ -767,6 +958,11 @@ export const TIDEABI = [
           {
             internalType: 'enum TideTokenNFT.NFTState',
             name: 'state',
+            type: 'uint8',
+          },
+          {
+            internalType: 'enum TideTokenNFT.ExpiryState',
+            name: 'expiryState',
             type: 'uint8',
           },
           {
@@ -827,38 +1023,6 @@ export const TIDEABI = [
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'myAddress',
-        type: 'address',
-      },
-    ],
-    name: 'isSender',
-    outputs: [
-      {
-        internalType: 'string',
-        name: '',
-        type: 'string',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'listExistingToken',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
     inputs: [],
     name: 'listPrice',
     outputs: [
@@ -877,6 +1041,31 @@ export const TIDEABI = [
         internalType: 'uint256',
         name: 'tokenId',
         type: 'uint256',
+      },
+      {
+        internalType: 'string',
+        name: 'email',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'fullName',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'phone',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'fullAddress',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'shippingMethod',
+        type: 'string',
       },
     ],
     name: 'makeOffer',
@@ -988,19 +1177,6 @@ export const TIDEABI = [
     type: 'function',
   },
   {
-    inputs: [],
-    name: 'serverAddress',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
     inputs: [
       {
         internalType: 'address',
@@ -1021,43 +1197,12 @@ export const TIDEABI = [
   {
     inputs: [
       {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'expiryDate',
-        type: 'uint256',
-      },
-    ],
-    name: 'setExpiryDate',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
         internalType: 'address',
         name: 'newMintingCurrency',
         type: 'address',
       },
     ],
     name: 'setMintingCurrency',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: '_newServer',
-        type: 'address',
-      },
-    ],
-    name: 'setServerAddress',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -1166,55 +1311,11 @@ export const TIDEABI = [
     inputs: [
       {
         internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'unlistToken',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    name: 'updateExpiry',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
         name: '_listPrice',
         type: 'uint256',
       },
     ],
     name: 'updateListingPrice',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'string',
-        name: 'ordernumber',
-        type: 'string',
-      },
-    ],
-    name: 'updateOrderNumber',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',

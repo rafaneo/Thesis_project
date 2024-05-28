@@ -5,7 +5,6 @@ import RadioSeries from './elements/radio_series/js/radio_series';
 import LinearProgress from '@mui/material/LinearProgress';
 import { uploadFileToIPFS, uploadJSONToIPFS } from './pinata';
 import NFTUpload from './elements/nft_upload/js/nft_upload';
-import { useLocation } from 'react-router';
 import { Web3 } from 'web3';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
 import { useForm } from 'react-hook-form';
@@ -120,6 +119,7 @@ export default function CreateListing() {
       price: 1.0,
     },
   });
+
   const provider = new Web3.providers.HttpProvider(
     'https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4',
   );
@@ -140,13 +140,7 @@ export default function CreateListing() {
   }, [file]);
 
   var setTransactionApproved = false;
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: 1.0,
-    country: 'Cyprus',
-  });
-  const location = useLocation();
+
   const [selectedProductType, setselectedProductType] = useState(
     productType[0],
   );
@@ -154,6 +148,7 @@ export default function CreateListing() {
     const hashedString = SHA256(name).toString();
     return hashedString;
   };
+
   async function disableButton() {
     const listButton = document.getElementById('list-button');
     listButton.disabled = true;
@@ -167,16 +162,6 @@ export default function CreateListing() {
     listButton.style.backgroundColor = '#4f46e5';
     listButton.style.opacity = 1;
   }
-
-  const handleChange = event => {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value,
-    });
-  };
-  const onSubmit = data => {
-    console.log(data);
-  };
 
   async function uploadNFTImage() {
     try {
@@ -201,9 +186,8 @@ export default function CreateListing() {
     }
   }
 
-  async function uploadMetadataToIPFS() {
-    const { name, description, price, country } = formData;
-    console.log(formData);
+  async function uploadMetadataToIPFS(data) {
+    const { name, description, price } = data; //TODO
     if (!name || !price) {
       return -1;
     }
@@ -211,7 +195,6 @@ export default function CreateListing() {
       name,
       description,
       price,
-      country,
       image: fileUrl,
       attributes: selection,
     };
@@ -224,9 +207,13 @@ export default function CreateListing() {
       console.log('error uploading JSON metadata:', e);
     }
   }
-  async function listNFT(e, data) {
-    e.preventDefault();
-    handleSubmit(onSubmit)();
+  const purchase = async formData => {
+    console.log('formData:', formData);
+    return true;
+  };
+
+  const listNFT = async data => {
+    console.log('data:', data);
     if (file === null || file === undefined || file.length === 0) {
       setNoFileMsg('Please upload a file');
       return;
@@ -254,7 +241,7 @@ export default function CreateListing() {
         ]);
 
         let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-        const price_val = web3.utils.toWei(formData.price, 'ether');
+        const price_val = web3.utils.toWei(data.price, 'ether');
 
         let listingPrice = await contract.methods.getListingPrice().call();
         let nonce = await web3.eth.getTransactionCount(signer);
@@ -283,22 +270,14 @@ export default function CreateListing() {
             setShowSpinner(false);
           }, 2000);
           setUploadMessage(['success', 'Product uploaded successfully!']);
-          setFormData({
-            name: '',
-            description: '',
-            price: '',
-          });
+          //TODO TO reset the values of the from
           navigate('/'); // TODO change this to should listed nfts in the future!
         } else {
           setTimeout(() => {
             setShowSpinner(false);
           }, 2000);
           setUploadMessage(['failed', 'Error uploading product']);
-          setFormData({
-            name: '',
-            description: '',
-            price: '',
-          });
+
           return;
         }
       } else {
@@ -311,14 +290,14 @@ export default function CreateListing() {
     } catch (e) {
       alert('Upload error' + e);
     }
-  }
+  };
 
   return (
     <div className='bg-gray-50'>
       <div className='mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-3xl lg:px-8'>
         <form
           className='lg:gap-x-12 xl:gap-x-16'
-          onSubmit={e => listNFT(e, selection)}
+          onSubmit={handleSubmit(purchase)}
         >
           <div className='border border-1 p-9'>
             <div>
@@ -338,9 +317,7 @@ export default function CreateListing() {
                     type='text'
                     id='name'
                     name='name'
-                    value={formData.name}
                     {...register('name')}
-                    onChange={handleChange}
                     className='block w-full rounded-md border-gray-500 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-xl p-2'
                   />
                   {errors.name?.message && (
@@ -366,8 +343,6 @@ export default function CreateListing() {
                     id='description'
                     name='description'
                     {...register('description')}
-                    value={formData.description}
-                    onChange={handleChange}
                     className='block rounded-md shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l w-80 h-20 resize-none border rounded-md px-3 py-2 transition-all duration-500 ease-in-out'
                   />
                   {errors.description?.message && (
@@ -397,8 +372,6 @@ export default function CreateListing() {
                       id='price'
                       type='number'
                       {...register('price')}
-                      onChange={handleChange}
-                      value={formData.price}
                       className=' block w-[25%] rounded-md border-gray-500 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
                       placeholder=' 0.00'
                     />
@@ -490,29 +463,6 @@ export default function CreateListing() {
                   />
                 </div>
               )}
-              <div className='mt-10 border-t '>
-                <label
-                  htmlFor='country'
-                  className='block text-sm font-medium text-gray-700 mt-5'
-                >
-                  Listing Country
-                </label>
-                <div className='mt-1'>
-                  <div className='mt-1'>
-                    <select
-                      id='country'
-                      name='country'
-                      value={formData.country}
-                      onChange={handleChange}
-                      autoComplete='country-name'
-                      className='block w-[25%] p-3 rounded-md border-gray-500 shadow-xl bg-white focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
-                    >
-                      <option>Cyprus</option>
-                      <option>Greece</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
             </div>
             {/* Upload NFT */}
             <div className='mt-10'>

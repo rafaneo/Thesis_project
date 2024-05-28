@@ -53,9 +53,6 @@ function classNames(...classes) {
 
 export default function Purchase() {
   const { id } = useParams();
-  // const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(
-  //   deliveryMethods[0],
-  // );
 
   const [data, setData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);

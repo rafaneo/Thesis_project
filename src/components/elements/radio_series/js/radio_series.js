@@ -14,11 +14,10 @@ function classNames(...classes) {
 function RadioSeries({ options, onSelectionChange }) {
   const [selectedOption, setselectedOption] = useState(options[0]);
   const [expiry, setExpiry] = useState('');
+  const [expiryState, setExpiryState] = useState(0);
   const [expiryTimeStamp, setExpiryTimeStamp] = useState('0');
   const [radioValue, setRadioValue] = useState('on-purchase');
   const [expiryMessage, setExpiryMessage] = useState('');
-  // const [selection, setSelection] = useState({});
-  // const { errors } = props;
 
   useEffect(() => {
     setselectedOption(options[0]);
@@ -45,13 +44,12 @@ function RadioSeries({ options, onSelectionChange }) {
 
   function getTimeStampOnPurchase(days) {
     if (handleExpiryOnPurchaseChange(days) === 0) return 0;
-
+    if (days == 'NaN' || days === '') {
+      days = 0;
+    }
     const expiry_days = parseInt(days);
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + expiry_days);
-    const futureTimestamp = futureDate.getTime();
-    console.log(futureTimestamp);
-    return futureTimestamp;
+    console.log(days);
+    return expiry_days;
   }
 
   function getTimeStampOnDate(date) {
@@ -154,8 +152,9 @@ function RadioSeries({ options, onSelectionChange }) {
                       <DateTimePicker
                         label='Expiry Date'
                         sx={{ width: '26ch' }}
-                        onChange={e =>
-                          setExpiryTimeStamp(getTimeStampOnDate(e))
+                        onChange={
+                          (e => setExpiryTimeStamp(getTimeStampOnDate(e)),
+                          setExpiryState(1))
                         }
                       />
                     </LocalizationProvider>
@@ -176,7 +175,7 @@ function RadioSeries({ options, onSelectionChange }) {
                       onChange={e => {
                         const inputValue = e.target.value;
                         setExpiry(inputValue);
-                        setExpiryTimeStamp(getTimeStampOnPurchase(inputValue));
+                        setExpiryState(0);
                       }}
                       value={expiry}
                       focused
