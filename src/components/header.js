@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Dialog } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useLocation } from 'react-router-dom';
 import { Web3 } from 'web3';
 import DropDown from './elements/drop_down/js/drop_down';
 
 const navigation = [
-  { name: 'All NFT', href: '/' },
+  { name: 'All Listings', href: '/', privilage: 'all' },
+  { name: 'Make a Listing', href: '/create_listing', privilage: 'logged' },
+  { name: 'My Listings', href: '/my_listings', privilage: 'logged' },
+  { name: 'Order History', href: '/order_history', privilage: 'logged' },
+  { name: 'Settings', href: '/settings', privilage: 'logged' },
   // { name: 'Features', href: '/' },
   // { name: 'Marketplace', href: '#' },
   // { name: 'Company', href: '#' },
@@ -42,24 +45,27 @@ export default function Header() {
             />
           </a>
           <div className='hidden lg:flex lg:gap-x-12'>
-            {navigation.map((item, index) => (
-              <div key={index}>
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className={'text-sm font-semibold leading-6 text-gray-900'}
-                >
-                  {item.name}
-                </a>
-                <div
-                  className={
-                    location.pathname === item.href
-                      ? 'h-[3px] rounded-lg w-full bg-indigo-600'
-                      : ''
-                  }
-                />
-              </div>
-            ))}
+            {navigation.map((item, index) =>
+              connectedAccount === undefined &&
+              item.privilage === 'logged' ? null : (
+                <div key={index}>
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className={'text-sm font-semibold leading-6 text-gray-900'}
+                  >
+                    {item.name}
+                  </a>
+                  <div
+                    className={
+                      location.pathname === item.href
+                        ? 'h-[3px] rounded-lg w-full bg-indigo-600'
+                        : ''
+                    }
+                  />
+                </div>
+              ),
+            )}
           </div>
         </div>
         <div className='flex lg:hidden'>
@@ -73,7 +79,10 @@ export default function Header() {
         </div>
         <div className='hidden lg:flex'>
           {connectedAccount !== undefined ? (
-            <DropDown connectedAccount={connectedAccount}></DropDown>
+            <DropDown
+              connectedAccount={connectedAccount}
+              menuItems={navigation}
+            ></DropDown>
           ) : (
             <a
               href='/login'
@@ -111,15 +120,29 @@ export default function Header() {
           <div className='mt-6 flow-root'>
             <div className='-my-6 divide-y divide-gray-500/10'>
               <div className='space-y-2 py-6'>
-                {navigation.map(item => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className='-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50'
-                  >
-                    {item.name}
-                  </a>
-                ))}
+                {navigation.map((item, index) =>
+                  connectedAccount === undefined &&
+                  item.privilage === 'logged' ? null : (
+                    <div key={index}>
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        className={
+                          'text-sm font-semibold leading-6 text-gray-900'
+                        }
+                      >
+                        {item.name}
+                      </a>
+                      <div
+                        className={
+                          location.pathname === item.href
+                            ? 'h-[3px] rounded-lg w-full bg-indigo-600'
+                            : ''
+                        }
+                      />
+                    </div>
+                  ),
+                )}
               </div>
               <div className='py-6'>
                 <a

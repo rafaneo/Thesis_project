@@ -1,478 +1,613 @@
-/*
-  This example requires some changes to your config:
-  
-  
-  // tailwind.config.js
-  module.exports = {
-    // ...
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-    ],
-  }
-  
-*/
-import { useState } from 'react'
-import { RadioGroup } from '@headlessui/react'
-import { CheckCircleIcon, TrashIcon } from '@heroicons/react/20/solid'
+import { useState, useEffect, useMemo } from 'react';
+import { RadioGroup } from '@headlessui/react';
+import { CheckCircleIcon, TrashIcon } from '@heroicons/react/20/solid';
+import { useParams, useNavigate } from 'react-router-dom';
+import Web3 from 'web3';
+import axios from 'axios';
+import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
+import { TideABI, TideAddress } from './abi/TideTokenABI';
+import { set, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 
-const products = [
+const schema = yup
+  .object({
+    email: yup
+      .string()
+      .email('Please enter a valid email address...')
+      .required('Email is required!'),
+    firstName: yup.string(),
+    surname: yup.string(),
+    address: yup.string().required('Address is required!'),
+    city: yup.string().required('City is required!'),
+    countryField: yup.string().required('Country is required!'),
+    postalCode: yup.string().required('Postal code is required!'),
+    phone: yup.string(),
+    deliveryMethod: yup.string().required('Delivery method is required!'),
+  })
+  .required();
+const deliveryMethods = [
   {
     id: 1,
-    title: 'Basic Tee',
-    href: '#',
-    price: '$32.00',
-    color: 'Black',
-    size: 'Large',
-    imageSrc: 'https://tailwindui.com/img/ecommerce-images/checkout-page-02-product-01.jpg',
-    imageAlt: "Front of men's Basic Tee in black.",
+    title: 'Standard',
+    turnaround: '4–10 business days',
+    price: '20.00',
   },
-  // More products...
-]
-const deliveryMethods = [
-  { id: 1, title: 'Standard', turnaround: '4–10 business days', price: '$5.00' },
-  { id: 2, title: 'Express', turnaround: '2–5 business days', price: '$16.00' },
-]
+  {
+    id: 2,
+    title: 'Express',
+    turnaround: '2–5 business days',
+    price: '40.00',
+  },
+];
+
 const paymentMethods = [
   { id: 'credit-card', title: 'Credit card' },
   { id: 'paypal', title: 'PayPal' },
   { id: 'etransfer', title: 'eTransfer' },
-]
+];
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
-export default function CreateListing() {
-  const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(deliveryMethods[0])
+export default function Purchase() {
+  const { id } = useParams();
 
-  return (
-    <div className="bg-gray-50">
-      <div className="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
-        <h2 className="sr-only">Checkout</h2>
+  const [data, setData] = useState([]);
+  const [dataFetched, updateFetched] = useState(false);
+  const [userAccount, setUserAccount] = useState('');
 
-        <form className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
-          <div>
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
+  const web3 = new Web3(window.ethereum);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm({
+    resolver: yupResolver(schema),
+    mode: 'all',
+    defaultValues: {
+      phone: '+357',
+      deliveryMethod: 1,
+    },
+  });
+
+  const selectedDeliveryMethod = useMemo(
+    () => deliveryMethods.find(rec => rec.id === watch('deliveryMethod') ?? 1),
+    [watch('deliveryMethod')],
+  );
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+        let accounts = await web3.eth.getAccounts();
+        let address = accounts[0];
+        setUserAccount(address);
+        let transaction = await contract.methods
+          .getTokenData(id)
+          .call({ from: address });
+
+        const tokenURI = await contract.methods.tokenURI(id).call();
+
+        let meta = await axios.get(tokenURI);
+
+        console.log({ meta });
+
+        let price = web3.utils.fromWei(transaction.price.toString(), 'ether');
+
+        var expiry = parseInt(transaction.expiry);
+        if (expiry != 0) {
+          expiry = new Date(parseInt(expiry)).toLocaleString();
+        } else {
+          expiry = 0;
+        }
+        var data = {
+          price,
+          tokenId: parseInt(transaction.tokenId),
+          seller: transaction.seller,
+          expiryDays: parseInt(meta.data.attributes.expiry),
+          expiryTimestamp: expiry,
+          state: transaction.state,
+          owner: transaction.owner,
+          offer: transaction.offer,
+          image: meta.data.image,
+          name: meta.data.name,
+          description: meta.data.description,
+          selectedOptions: meta.data.selectedOptions,
+        };
+
+        setData(data);
+        console.log(data);
+        updateFetched(true);
+      } catch (error) {
+        console.error('Error fetching NFT:', error);
+        // Handle error here
+      }
+    };
+
+    fetchData(); // Call the fetchData function when the component mounts
+  }, [id]);
+
+  const purchase = async formData => {
+    setErrorMessage('');
+    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+    let tokenContract = new web3.eth.Contract(TideABI, TideAddress);
+
+    const total_before_gas =
+      parseFloat(data.price) + parseFloat(selectedDeliveryMethod.price);
+    console.log({ total_before_gas });
+    const approvalTx = await tokenContract.methods
+      .approve(ContractAddress, total_before_gas)
+      .send({
+        from: userAccount,
+      });
+    console.log('Approval transaction hash:', approvalTx.transactionHash);
+
+    const transaction = await contract.methods.makeOffer(id).send({
+      from: userAccount,
+      gas: 300000, // Use the estimated gas
+    });
+    console.log('Transaction:', transaction);
+
+    try {
+      const order = {
+        email: formData.email,
+        name: formData.firstName,
+        surname: formData.surname,
+        seller: formData.seller,
+        buyer: userAccount,
+        tokenId: id,
+        address: formData.address,
+        country: formData.country,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        unit: formData.apartment,
+        delivery: selectedDeliveryMethod.title,
+        phone: formData.phone,
+        productCost: formData.price,
+        total: total_before_gas,
+      };
+
+      console.log('Order:', order);
+      const orderResponse = await axios.post(
+        'http://192.168.1.159:8000/api/createOrder',
+        order,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      console.log('Order response:', orderResponse);
+      navigate('/order_history');
+    } catch (e) {
+      if (e.response.data.error == '1000') {
+        setErrorMessage('Invalid Request!');
+      } else if (
+        e.response.data.error >= 1001 &&
+        e.response.data.error <= 1014
+      ) {
+        setErrorMessage('Some of the fields are missing or invalid!');
+      } else if (e.response.data.error == 1015) {
+        setErrorMessage('There is already an order for this product!');
+      } else {
+        setErrorMessage('Something went wrong! Try again');
+      }
+    }
+    return true;
+  };
+
+  if (dataFetched === false) {
+    return <p className='text-center mt-10'>Loading...</p>;
+  } else if (
+    (dataFetched === true && data.state === 3) ||
+    data.state === 1 ||
+    data.offer !== EthreumNull
+  ) {
+    navigate('/*');
+  } else {
+    return (
+      <div className='bg-gray-50'>
+        <div className='mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8'>
+          <h2 className='sr-only'>Checkout</h2>
+
+          <form
+            className='lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16'
+            onSubmit={handleSubmit(purchase)}
+          >
             <div>
-              <h2 className="text-lg font-medium text-gray-900">Contact information</h2>
-
-              <div className="mt-4">
-                <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">
-                  Email address
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="email"
-                    id="email-address"
-                    name="email-address"
-                    autoComplete="email"
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-10 border-t border-gray-200 pt-10">
-              <h2 className="text-lg font-medium text-gray-900">Shipping information</h2>
-
-              <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                <div>
-                  <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
-                    First name
+              <div>
+                <h2 className='text-lg font-medium text-gray-900'>
+                  Contact information
+                </h2>
+                <div className='mt-4'>
+                  <label
+                    htmlFor='name'
+                    className='block text-sm font-medium text-gray-700'
+                  >
+                    Email address <p className='inline text-red-600'>*</p>
                   </label>
-                  <div className="mt-1">
+                  <div className='mt-1'>
                     <input
-                      type="text"
-                      id="first-name"
-                      name="first-name"
-                      autoComplete="given-name"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      type='text'
+                      id='email'
+                      name='email'
+                      {...register('email')}
+                      className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
                     />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="last-name" className="block text-sm font-medium text-gray-700">
-                    Last name
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="last-name"
-                      name="last-name"
-                      autoComplete="family-name"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700">
-                    Company
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="company"
-                      id="company"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                    Address
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="address"
-                      id="address"
-                      autoComplete="street-address"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label htmlFor="apartment" className="block text-sm font-medium text-gray-700">
-                    Apartment, suite, etc.
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="apartment"
-                      id="apartment"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                    City
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="city"
-                      id="city"
-                      autoComplete="address-level2"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                    Country
-                  </label>
-                  <div className="mt-1">
-                    <select
-                      id="country"
-                      name="country"
-                      autoComplete="country-name"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    >
-                      <option>United States</option>
-                      <option>Canada</option>
-                      <option>Mexico</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="region" className="block text-sm font-medium text-gray-700">
-                    State / Province
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="region"
-                      id="region"
-                      autoComplete="address-level1"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="postal-code" className="block text-sm font-medium text-gray-700">
-                    Postal code
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="postal-code"
-                      id="postal-code"
-                      autoComplete="postal-code"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="phone"
-                      id="phone"
-                      autoComplete="tel"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
+                    {errors.email?.message && (
+                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                        {errors.email.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-10 border-t border-gray-200 pt-10">
-              <RadioGroup value={selectedDeliveryMethod} onChange={setSelectedDeliveryMethod}>
-                <RadioGroup.Label className="text-lg font-medium text-gray-900">Delivery method</RadioGroup.Label>
+              <div className='mt-10 border-t border-gray-200 pt-10'>
+                <h2 className='text-lg font-medium text-gray-900'>
+                  Shipping information
+                </h2>
 
-                <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                  {deliveryMethods.map((deliveryMethod) => (
-                    <RadioGroup.Option
-                      key={deliveryMethod.id}
-                      value={deliveryMethod}
-                      className={({ checked, active }) =>
-                        classNames(
-                          checked ? 'border-transparent' : 'border-gray-300',
-                          active ? 'ring-2 ring-indigo-500' : '',
-                          'relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none'
-                        )
-                      }
+                <div className='mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4'>
+                  <div className='mt-4'>
+                    <label
+                      htmlFor='name'
+                      className='block text-sm font-medium text-gray-700'
                     >
-                      {({ checked, active }) => (
-                        <>
-                          <span className="flex flex-1">
-                            <span className="flex flex-col">
-                              <RadioGroup.Label as="span" className="block text-sm font-medium text-gray-900">
-                                {deliveryMethod.title}
-                              </RadioGroup.Label>
-                              <RadioGroup.Description
-                                as="span"
-                                className="mt-1 flex items-center text-sm text-gray-500"
-                              >
-                                {deliveryMethod.turnaround}
-                              </RadioGroup.Description>
-                              <RadioGroup.Description as="span" className="mt-6 text-sm font-medium text-gray-900">
-                                {deliveryMethod.price}
-                              </RadioGroup.Description>
-                            </span>
-                          </span>
-                          {checked ? <CheckCircleIcon className="h-5 w-5 text-indigo-600" aria-hidden="true" /> : null}
-                          <span
-                            className={classNames(
-                              active ? 'border' : 'border-2',
-                              checked ? 'border-indigo-500' : 'border-transparent',
-                              'pointer-events-none absolute -inset-px rounded-lg'
-                            )}
-                            aria-hidden="true"
-                          />
-                        </>
+                      First Name
+                    </label>
+                    <div className='mt-1'>
+                      <input
+                        type='text'
+                        id='name'
+                        name='name'
+                        {...register('firstName')}
+                        className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
+                      />
+                      {errors.firstName?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.firstName.message}
+                        </p>
                       )}
-                    </RadioGroup.Option>
-                  ))}
-                </div>
-              </RadioGroup>
-            </div>
+                    </div>
+                  </div>
 
-            {/* Payment */}
-            <div className="mt-10 border-t border-gray-200 pt-10">
-              <h2 className="text-lg font-medium text-gray-900">Payment</h2>
-
-              <fieldset className="mt-4">
-                <legend className="sr-only">Payment type</legend>
-                <div className="space-y-4 sm:flex sm:items-center sm:space-x-10 sm:space-y-0">
-                  {paymentMethods.map((paymentMethod, paymentMethodIdx) => (
-                    <div key={paymentMethod.id} className="flex items-center">
-                      {paymentMethodIdx === 0 ? (
-                        <input
-                          id={paymentMethod.id}
-                          name="payment-type"
-                          type="radio"
-                          defaultChecked
-                          className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                      ) : (
-                        <input
-                          id={paymentMethod.id}
-                          name="payment-type"
-                          type="radio"
-                          className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
+                  <div className='mt-4'>
+                    <label
+                      htmlFor='name'
+                      className='block text-sm font-medium text-gray-700'
+                    >
+                      Last Name{' '}
+                    </label>
+                    <div className='mt-1'>
+                      <input
+                        type='text'
+                        id='surname'
+                        name='surname'
+                        {...register('surname')}
+                        className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
+                      />
+                      {errors.surname?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.surname.message}
+                        </p>
                       )}
-
-                      <label htmlFor={paymentMethod.id} className="ml-3 block text-sm font-medium text-gray-700">
-                        {paymentMethod.title}
+                    </div>
+                  </div>
+                  <div className='sm:col-span-2'>
+                    <div className='mt-4'>
+                      <label
+                        htmlFor='name'
+                        className='block text-sm font-medium text-gray-700'
+                      >
+                        Address <p className='inline text-red-600'>*</p>
                       </label>
+                      <div className='mt-1'>
+                        <input
+                          type='text'
+                          id='address'
+                          name='address'
+                          {...register('address')}
+                          className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-l p-2'
+                        />
+                        {errors.address?.message && (
+                          <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                            {errors.address.message}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </fieldset>
-
-              <div className="mt-6 grid grid-cols-4 gap-x-4 gap-y-6">
-                <div className="col-span-4">
-                  <label htmlFor="card-number" className="block text-sm font-medium text-gray-700">
-                    Card number
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="card-number"
-                      name="card-number"
-                      autoComplete="cc-number"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
                   </div>
-                </div>
 
-                <div className="col-span-4">
-                  <label htmlFor="name-on-card" className="block text-sm font-medium text-gray-700">
-                    Name on card
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      id="name-on-card"
-                      name="name-on-card"
-                      autoComplete="cc-name"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
+                  <div className='mt-4'>
+                    <label
+                      htmlFor='name'
+                      className='block text-sm font-medium text-gray-700'
+                    >
+                      Apartment, suite, etc.
+                    </label>
+                    <div className='mt-1'>
+                      <input
+                        type='text'
+                        id='apartment'
+                        name='apartment'
+                        {...register('apartment')}
+                        className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
+                      />
+                      {errors.apartment?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.apartment.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="col-span-3">
-                  <label htmlFor="expiration-date" className="block text-sm font-medium text-gray-700">
-                    Expiration date (MM/YY)
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="expiration-date"
-                      id="expiration-date"
-                      autoComplete="cc-exp"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
+                  <div className='mt-4'>
+                    <label
+                      htmlFor='name'
+                      className='block text-sm font-medium text-gray-700'
+                    >
+                      City <p className='inline text-red-600'>*</p>
+                    </label>
+                    <div className='mt-1'>
+                      <input
+                        type='text'
+                        id='city'
+                        name='city'
+                        {...register('city')}
+                        className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
+                      />
+                      {errors.city?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.city.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                  <div>
+                    <label
+                      htmlFor='country'
+                      className='block text-sm font-medium text-gray-700'
+                    >
+                      Country <p className='inline text-red-600'>*</p>
+                    </label>
+                    <div className='mt-1'>
+                      <div className='mt-1'>
+                        <select
+                          id='country'
+                          name='country'
+                          {...register('countryField')}
+                          autoComplete='country-name'
+                          className='block w-full rounded-md border border-gray-200 shadow-xl bg-white focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
+                        >
+                          <option>Cyprus</option>
+                          <option>Greece</option>
+                        </select>
+                      </div>
+                    </div>
+                    {errors.countryField?.message && (
+                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                        {errors.countryField.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor='name'
+                      className='block text-sm font-medium text-gray-700'
+                    >
+                      Postal Code <p className='inline text-red-600'>*</p>
+                    </label>
+                    <div className='mt-1'>
+                      <input
+                        type='text'
+                        id='postalCode'
+                        name='postalCode'
+                        {...register('postalCode')}
+                        className='block w-full rounded-md border border-gray-200 shadow-xl bg-white focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
+                      />
+                      {errors.postalCode?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.postalCode.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-                <div>
-                  <label htmlFor="cvc" className="block text-sm font-medium text-gray-700">
-                    CVC
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="cvc"
-                      id="cvc"
-                      autoComplete="csc"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
+                  <div className='sm:col-span-2 '>
+                    <label
+                      htmlFor='name'
+                      className='block text-sm font-medium text-gray-700'
+                    >
+                      Phone number{' '}
+                    </label>
+                    <div className='mt-1'>
+                      <input
+                        type='text'
+                        id='phone'
+                        name='phone'
+                        {...register('phone')}
+                        className='block w-full rounded-md border border-gray-200 shadow-xl focus:border-indigo-800 focus:ring-indigo-800 sm:text-m p-2'
+                      />
+                      {errors.phone?.message && (
+                        <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                          {errors.phone.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <div className='mt-10 border-t border-gray-200 pt-10'>
+                <RadioGroup
+                  {...register('deliveryMethod')}
+                  onChange={v => setValue('deliveryMethod', v)}
+                >
+                  <RadioGroup.Label className='text-lg font-medium text-gray-900'>
+                    Delivery method <p className='inline text-red-600'>*</p>
+                  </RadioGroup.Label>
+
+                  <div className='mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4'>
+                    {deliveryMethods.map(deliveryMethod => (
+                      <RadioGroup.Option
+                        key={deliveryMethod.id}
+                        value={deliveryMethod.id}
+                        className={({ checked, active }) =>
+                          classNames(
+                            checked ? 'border-transparent' : 'border-gray-300',
+                            active ? 'ring-2 ring-indigo-500' : '',
+                            'relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none',
+                          )
+                        }
+                      >
+                        {({ checked, active }) => (
+                          <>
+                            <span className='flex flex-1'>
+                              <span className='flex flex-col'>
+                                <RadioGroup.Label
+                                  as='span'
+                                  className='block text-sm font-medium text-gray-900'
+                                >
+                                  {deliveryMethod.title}
+                                </RadioGroup.Label>
+                                <RadioGroup.Description
+                                  as='span'
+                                  className='mt-1 flex items-center text-sm text-gray-500'
+                                >
+                                  {deliveryMethod.turnaround}
+                                </RadioGroup.Description>
+                                <RadioGroup.Description
+                                  as='span'
+                                  className='mt-6 text-sm font-medium text-gray-900'
+                                >
+                                  {deliveryMethod.price}
+                                </RadioGroup.Description>
+                              </span>
+                            </span>
+                            {checked ? (
+                              <CheckCircleIcon
+                                className='h-5 w-5 text-indigo-600'
+                                aria-hidden='true'
+                              />
+                            ) : null}
+                            <span
+                              className={classNames(
+                                active ? 'border' : 'border-2',
+                                checked
+                                  ? 'border-indigo-500'
+                                  : 'border-transparent',
+                                'pointer-events-none absolute -inset-px rounded-lg',
+                              )}
+                              aria-hidden='true'
+                            />
+                          </>
+                        )}
+                      </RadioGroup.Option>
+                    ))}
+                  </div>
+                </RadioGroup>
+              </div>
+              {/* Payment */}
+              <div className='mt-10 border-t border-gray-200 pt-10'></div>
             </div>
-          </div>
 
-          {/* Order summary */}
-          <div className="mt-10 lg:mt-0">
-            <h2 className="text-lg font-medium text-gray-900">Order summary</h2>
+            {/* Order summary */}
+            <div className='mt-10 lg:mt-0'>
+              <h2 className='text-lg font-medium text-gray-900'>
+                Order summary
+              </h2>
 
-            <div className="mt-4 rounded-lg border border-gray-200 bg-white shadow-sm">
-              <h3 className="sr-only">Items in your cart</h3>
-              <ul role="list" className="divide-y divide-gray-200">
-                {products.map((product) => (
-                  <li key={product.id} className="flex px-4 py-6 sm:px-6">
-                    <div className="flex-shrink-0">
-                      <img src={product.imageSrc} alt={product.imageAlt} className="w-20 rounded-md" />
+              <div className='mt-4 rounded-lg border border-gray-200 bg-white shadow-sm'>
+                <h3 className='sr-only'>Items in your cart</h3>
+                <ul role='list' className='divide-y divide-gray-200'>
+                  <li key={data.tokenId} className='flex px-4 py-6 sm:px-6'>
+                    <div className='flex-shrink-0'>
+                      <img src={data.image} className='w-20 rounded-md' />
                     </div>
 
-                    <div className="ml-6 flex flex-1 flex-col">
-                      <div className="flex">
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-sm">
-                            <a href={product.href} className="font-medium text-gray-700 hover:text-gray-800">
-                              {product.title}
+                    <div className='ml-6 flex flex-1 flex-col'>
+                      <div className='flex'>
+                        <div className='min-w-0 flex-1'>
+                          <h4 className='text-sm'>
+                            <a
+                              // href={product.href}
+                              className='font-medium text-gray-700 hover:text-gray-800'
+                            >
+                              Name: {data.name}
                             </a>
                           </h4>
-                          <p className="mt-1 text-sm text-gray-500">{product.color}</p>
-                          <p className="mt-1 text-sm text-gray-500">{product.size}</p>
+                          <p className='mt-1 text-sm text-gray-500'>
+                            Description: {data.description}
+                          </p>
+                          <p className='mt-1 text-sm text-gray-500'>
+                            Expiry:{' '}
+                            {data.expiryTimestamp === 0 ? (
+                              <p className='inline'>No expiry</p>
+                            ) : (
+                              <span className='inline'>
+                                {data.expiryDays}-days {data.expiryTimestamp}
+                              </span>
+                            )}
+                          </p>
                         </div>
 
-                        <div className="ml-4 flow-root flex-shrink-0">
+                        <div className='ml-4 flow-root flex-shrink-0'>
                           <button
-                            type="button"
-                            className="-m-2.5 flex items-center justify-center bg-white p-2.5 text-gray-400 hover:text-gray-500"
+                            type='button'
+                            className='-m-2.5 flex items-center justify-center bg-white p-2.5 text-gray-400 hover:text-gray-500'
                           >
-                            <span className="sr-only">Remove</span>
-                            <TrashIcon className="h-5 w-5" aria-hidden="true" />
+                            <span className='sr-only'>Remove</span>
+                            <TrashIcon className='h-5 w-5' aria-hidden='true' />
                           </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-1 items-end justify-between pt-2">
-                        <p className="mt-1 text-sm font-medium text-gray-900">{product.price}</p>
-
-                        <div className="ml-4">
-                          <label htmlFor="quantity" className="sr-only">
-                            Quantity
-                          </label>
-                          <select
-                            id="quantity"
-                            name="quantity"
-                            className="rounded-md border border-gray-300 text-left text-base font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
-                          >
-                            <option value={1}>1</option>
-                            <option value={2}>2</option>
-                            <option value={3}>3</option>
-                            <option value={4}>4</option>
-                            <option value={5}>5</option>
-                            <option value={6}>6</option>
-                            <option value={7}>7</option>
-                            <option value={8}>8</option>
-                          </select>
                         </div>
                       </div>
                     </div>
                   </li>
-                ))}
-              </ul>
-              <dl className="space-y-6 border-t border-gray-200 px-4 py-6 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm">Subtotal</dt>
-                  <dd className="text-sm font-medium text-gray-900">$64.00</dd>
+                </ul>
+                <dl className='space-y-6 border-t border-gray-200 px-4 py-6 sm:px-6'>
+                  <div className='flex items-center justify-between'>
+                    <dt className='text-sm'>Subtotal</dt>
+                    <dd className='text-sm font-medium text-gray-900'>
+                      {data.price} TiDE
+                    </dd>
+                  </div>
+                  <div className='flex items-center justify-between'>
+                    <dt className='text-sm'>Shipping</dt>
+                    <dd className='text-sm font-medium text-gray-900'>
+                      {selectedDeliveryMethod?.price} TiDE
+                    </dd>
+                  </div>
+                  <div className='flex items-center justify-between border-t border-gray-200 pt-6'>
+                    <dt className='text-base font-medium'>Total</dt>
+                    <dd className='text-base font-medium text-gray-900'>
+                      {parseFloat(data.price) +
+                        parseFloat(selectedDeliveryMethod?.price)}{' '}
+                      TiDE
+                    </dd>
+                  </div>
+                </dl>
+                <p className='text-center text-red-400 mb-2'>{errorMessage}</p>
+                <div className='border-t border-gray-200 px-4 py-6 sm:px-6'>
+                  <button
+                    type='submit'
+                    className='w-full rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50'
+                  >
+                    Confirm order
+                  </button>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm">Shipping</dt>
-                  <dd className="text-sm font-medium text-gray-900">$5.00</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm">Taxes</dt>
-                  <dd className="text-sm font-medium text-gray-900">$5.52</dd>
-                </div>
-                <div className="flex items-center justify-between border-t border-gray-200 pt-6">
-                  <dt className="text-base font-medium">Total</dt>
-                  <dd className="text-base font-medium text-gray-900">$75.52</dd>
-                </div>
-              </dl>
-
-              <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
-                <button
-                  type="submit"
-                  className="w-full rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50"
-                >
-                  Confirm order
-                </button>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
-  )
+    );
+  }
 }

@@ -3,14 +3,17 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import App from './App';
+import { AuthProvider } from './isLogged';
 
 const domNode = document.getElementById('root');
 
 ReactDOM.render(
   <React.StrictMode>
-        <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>,
-  domNode
+  domNode,
 );
 
 // If you want to start measuring performance in your app, pass a function
