@@ -26,3 +26,9 @@ export const convertGasToTide = gas => {
   let tide = web3.utils.toWei(gas * 10, 'ether');
   return tide;
 };
+
+export const getHashFromUrl = url => {
+  var IPFSUrl = url.split('/');
+  const lastIndex = IPFSUrl.length;
+  return IPFSUrl[lastIndex - 1];
+};

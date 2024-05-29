@@ -3,6 +3,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { unlistProduct } from './pinata';
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -25,12 +26,16 @@ export default function ListingView(props) {
     setShowModal(true);
   }
 
-  function handleDecline2() {
-    console.log('here2');
-  }
+  async function unList() {
+    data.listingStatus = 'Unlisted';
+    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+    let address = await web3.eth.getAccounts();
 
-  function handleWhoops() {
-    console.log('here3');
+    address = address[0];
+    const tokenURI = await contract.methods.tokenURI(id).call();
+
+    // console.log(pinHash);
+    // unlistProduct(pinHash, data.tokenId, data);
   }
 
   useEffect(() => {
@@ -63,7 +68,7 @@ export default function ListingView(props) {
           seller: transaction.seller,
           expiryDays: meta.data.attributes.expiry,
           expiryTimestamp: expiry,
-          state: transaction.state,
+          state: parseInt(transaction.state),
           owner: transaction.owner,
           offer: transaction.offer,
           orderNumber: transaction.orderNumber,
@@ -72,6 +77,7 @@ export default function ListingView(props) {
           description: meta.data.description,
           selectedOptions: meta.data.selectedOptions,
         };
+        console.log(data);
         setData(data);
         updateFetched(true);
       } catch (error) {
@@ -80,17 +86,17 @@ export default function ListingView(props) {
       }
 
       try {
-        const response = await axios.get(
-          'http://192.168.1.159:8000/api/getOrder',
-          {
-            headers: {
-              'Order-Number': `${data.orderNumber}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-        console.log(response.data);
-        setPersonInfo(response.data);
+        // const response = await axios.get(
+        //   'http://192.168.1.159:8000/api/getOrder',
+        //   {
+        //     headers: {
+        //       'Order-Number': `${data.orderNumber}`,
+        //       'Content-Type': 'application/json',
+        //     },
+        //   },
+        // );
+        // console.log(response.data);
+        // setPersonInfo(response.data);
       } catch (error) {}
     };
 
@@ -304,10 +310,10 @@ export default function ListingView(props) {
                 )}
                 {data.offer === EthreumNull && [0, 4].includes(data.state) && (
                   <button
-                    onClick={() => 1}
+                    onClick={() => unList()}
                     className={
                       (data.state === 0
-                        ? 'bg-gray-600 hover:bg-gray-700'
+                        ? 'bg-red-400 hover:bg-red-500'
                         : 'bg-indigo-600 hover:bg-indigo-700') +
                       ' flex w-full items-center justify-center rounded-md border border-transparent px-8 py-3 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
                     }

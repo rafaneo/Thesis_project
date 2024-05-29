@@ -198,7 +198,6 @@ export default function CreateListing() {
 
   async function uploadMetadataToIPFS(data) {
     const { name, description, price } = data;
-    const listingStatus = 'Listed';
     console.log('selection:', selection);
     if (checkSelection() === -1) {
       return -1;
@@ -211,7 +210,6 @@ export default function CreateListing() {
       name,
       description,
       price,
-      listingStatus,
       image: fileUrl,
       attributes: selection,
     };
