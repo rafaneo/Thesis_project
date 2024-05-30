@@ -3,8 +3,8 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { unlistProduct } from './pinata';
-
+import { unlistProduct, reListProduct, getPinListByHash } from './pinata';
+import { getHashFromUrl, formatPrice, formatExpiryDate } from './utils';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ModalDialog from './elements/dialog/js/dialog';
@@ -18,30 +18,53 @@ export default function ListingView(props) {
   const [dataFetched, updateFetched] = useState(false);
   const [wallet, setWallet] = useState('');
   const navigate = useNavigate();
-  const web3 = new Web3(window.ethereum);
   const [showModal, setShowModal] = useState(false);
+  const web3 = new Web3(window.ethereum);
+  let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
   function handleDecline(e) {
     e.preventDefault();
     setShowModal(true);
   }
 
-  async function unList() {
-    data.listingStatus = 'Unlisted';
-    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-    let address = await web3.eth.getAccounts();
+  async function getListingsStatus(tokenURI) {
+    try {
+      let hash = getHashFromUrl(tokenURI);
+      const query = await getPinListByHash(hash);
+      const listingStatus =
+        query.keyvalues[0].listingStatus === null
+          ? 'Unlisted'
+          : query.keyvalues[0].listingStatus;
+      return listingStatus; // Return the value
+    } catch (error) {
+      console.error('Error getting listing status:', error);
+      return null; // Return null if there is an error
+    }
+  }
 
+  async function list() {
+    data.listingStatus = 'Listed';
+    let address = await web3.eth.getAccounts();
     address = address[0];
     const tokenURI = await contract.methods.tokenURI(id).call();
+    const pinHash = getHashFromUrl(tokenURI);
+    await reListProduct(pinHash);
+    window.location.reload();
+  }
 
-    // console.log(pinHash);
-    // unlistProduct(pinHash, data.tokenId, data);
+  async function unList() {
+    data.listingStatus = 'Unlisted';
+    let address = await web3.eth.getAccounts();
+    address = address[0];
+    const tokenURI = await contract.methods.tokenURI(id).call();
+    const pinHash = getHashFromUrl(tokenURI);
+    await unlistProduct(pinHash);
+    window.location.reload();
   }
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
         let accounts = await web3.eth.getAccounts();
         let address = accounts[0];
         setWallet(address);
@@ -52,30 +75,30 @@ export default function ListingView(props) {
         const tokenURI = await contract.methods.tokenURI(id).call();
 
         let meta = await axios.get(tokenURI);
+        meta = meta.data;
 
-        let price = web3.utils.fromWei(transaction.price.toString(), 'ether');
+        const price = meta.price;
 
-        var expiry = parseInt(transaction.expiry);
-        if (expiry != 0) {
-          expiry = new Date(parseInt(expiry)).toLocaleString();
-        } else {
-          expiry = 0;
-        }
-        console.log(meta.data);
+        const expiryDate = formatExpiryDate(
+          meta.expiryState,
+          meta.expiryDays,
+          meta.expiryTimeStamp,
+        );
+
         var data = {
           price,
           tokenId: parseInt(transaction.tokenId),
           seller: transaction.seller,
-          expiryDays: meta.data.attributes.expiry,
-          expiryTimestamp: expiry,
+          expiryDate: expiryDate,
           state: parseInt(transaction.state),
+          listingStatus: await getListingsStatus(tokenURI),
           owner: transaction.owner,
           offer: transaction.offer,
           orderNumber: transaction.orderNumber,
-          image: meta.data.image,
-          name: meta.data.name,
-          description: meta.data.description,
-          selectedOptions: meta.data.selectedOptions,
+          image: meta.image,
+          name: meta.name,
+          description: meta.description,
+          selectedOptions: meta.selectedOptions,
         };
         console.log(data);
         setData(data);
@@ -106,7 +129,22 @@ export default function ListingView(props) {
   const acceptOffer = async e => {
     e.preventDefault();
 
-    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+    let estimate_gas = await contract.methods.acceptOffer(id).estimateGas({
+      from: wallet,
+    });
+
+    let owner = await contract.methods.ownerOf(id).call();
+    let transaction = await contract.methods
+      .acceptOffer(id)
+      .send({ from: wallet, gas: estimate_gas });
+
+    console.log(transaction);
+
+    navigate('/my_listings');
+  };
+
+  const declineOffer = async e => {
+    e.preventDefault();
 
     let estimate_gas = await contract.methods.acceptOffer(id).estimateGas({
       from: wallet,
@@ -186,39 +224,41 @@ export default function ListingView(props) {
 
               <div className='mt-4 lg:col-span-5 space-y-4'>
                 <form>
-                  {data.offer !== EthreumNull ? (
-                    <div>
+                  {data.listingStatus === 'Listed' ? (
+                    data.offer !== EthreumNull ? (
+                      <div>
+                        <button
+                          onClick={acceptOffer}
+                          className='flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+                        >
+                          Accept Offer
+                        </button>
+                        <button
+                          onClick={handleDecline}
+                          className='flex w-full items-center justify-center rounded-md border border-transparent bg-red-400 px-8 py-3 mt-3 text-base font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2'
+                        >
+                          Decline Offer
+                        </button>
+                        {showModal && (
+                          <ModalDialog
+                            title='Are you sure you want to decline the offer?'
+                            text='Decline'
+                            buttonText='Decline'
+                            onConfirm={() => navigate('/my_listings')}
+                          />
+                        )}
+                      </div>
+                    ) : (
                       <button
-                        onClick={acceptOffer}
-                        className='flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+                        disabled
+                        className={
+                          'flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-500'
+                        }
                       >
-                        Accept Offer
+                        Awaiting Offers
                       </button>
-                      <button
-                        onClick={handleDecline}
-                        className='flex w-full items-center justify-center rounded-md border border-transparent bg-red-400 px-8 py-3 mt-3 text-base font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2'
-                      >
-                        Decline Offer
-                      </button>
-                      {showModal && (
-                        <ModalDialog
-                          title='Are you sure you want to decline the offer?'
-                          text='Decline'
-                          buttonText='Decline'
-                          onConfirm={() => navigate('/my_listings')}
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      disabled
-                      className={
-                        'flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-500'
-                      }
-                    >
-                      Awaiting Offers
-                    </button>
-                  )}
+                    )
+                  ) : null}
                 </form>
 
                 {/* Product details */}
@@ -257,13 +297,7 @@ export default function ListingView(props) {
                   <h2 className='text-sm font-medium text-gray-900'>Expiry</h2>
 
                   <p className='prose prose-sm text-gray-500'>
-                    {data.expiryTimestamp === 0 ? (
-                      <p className='inline'>No expiry</p>
-                    ) : (
-                      <span className='inline'>
-                        {data.expiryDays}-days {data.expiryTimestamp}
-                      </span>
-                    )}
+                    {data.expiryDate}
                   </p>
                 </div>
 
@@ -310,7 +344,9 @@ export default function ListingView(props) {
                 )}
                 {data.offer === EthreumNull && [0, 4].includes(data.state) && (
                   <button
-                    onClick={() => unList()}
+                    onClick={() =>
+                      data.listingStatus === 'Listed' ? unList() : list()
+                    }
                     className={
                       (data.state === 0
                         ? 'bg-red-400 hover:bg-red-500'
@@ -318,8 +354,7 @@ export default function ListingView(props) {
                       ' flex w-full items-center justify-center rounded-md border border-transparent px-8 py-3 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
                     }
                   >
-                    {data.state === 0 && 'Unlist'}
-                    {data.state === 4 && 'List'}
+                    {data.listingStatus === 'Listed' ? 'Unlist' : 'List'}
                   </button>
                 )}
               </div>

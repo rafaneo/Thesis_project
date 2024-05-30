@@ -130,7 +130,7 @@ export const reListProduct = async (ipfsPinHash, name, keyvalues) => {
   const JSONBody = {
     ipfsPinHash: ipfsPinHash,
     keyvalues: {
-      listingStatus: 'Unlisted',
+      listingStatus: 'Listed',
     },
   };
 

@@ -32,3 +32,24 @@ export const getHashFromUrl = url => {
   const lastIndex = IPFSUrl.length;
   return IPFSUrl[lastIndex - 1];
 };
+
+export const formatPrice = price => {
+  return web3.utils.fromWei(price.toString(), 'ether');
+};
+
+export const formatExpiryDate = (expiryStatus, expiryDays, expiryTimeStamp) => {
+  expiryStatus = parseInt(expiryStatus);
+  expiryDays = parseInt(expiryDays);
+  expiryTimeStamp = parseInt(expiryTimeStamp);
+
+  if (expiryStatus == 0) {
+    return 'Expires after' + expiryDays + ' days';
+  } else if (expiryStatus == 1) {
+    const expiry = new Date(expiryTimeStamp);
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+
+    return expiry.toLocaleDateString('en-US', options);
+  } else {
+    return 'No Expiry Date';
+  }
+};

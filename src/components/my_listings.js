@@ -1,7 +1,7 @@
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { getHashFromUrl } from './utils';
-import { useState } from 'react';
+import { getHashFromUrl, formatPrice, formatExpiryDate } from './utils';
+import { useEffect, useState } from 'react';
 import { getPinListByHash } from './pinata';
 import axios from 'axios';
 import Web3 from 'web3';
@@ -13,19 +13,17 @@ export default function MyListings() {
   const [data, updateData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
-  //   const web3 = new Web3(
-  //     new Web3.providers.HttpProvider(
-  //       'https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4',
-  //     ),
-  //   );
   const web3 = new Web3(window.ethereum);
+  let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
   async function getListingsStatus(tokenURI) {
     try {
       let hash = getHashFromUrl(tokenURI);
       const query = await getPinListByHash(hash);
-      const listingStatus = query.keyvalues[0];
-      console.log('listingStatus', listingStatus);
+      const listingStatus =
+        query.keyvalues[0].listingStatus === null
+          ? 'Unlisted'
+          : query.keyvalues[0].listingStatus;
       return listingStatus; // Return the value
     } catch (error) {
       console.error('Error getting listing status:', error);
@@ -33,62 +31,63 @@ export default function MyListings() {
     }
   }
 
-  async function getNFTData() {
-    try {
-      let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-      let address = await web3.eth.getAccounts();
-      address = address[0];
-      let transaction = await contract.methods
-        .getMyNFTS()
-        .call({ from: address });
+  useEffect(() => {
+    const fetchNFTs = async () => {
+      try {
+        let address = await web3.eth.getAccounts();
+        address = address[0];
+        let transaction = await contract.methods
+          .getMyNFTS()
+          .call({ from: address });
+        const items = await Promise.all(
+          transaction.map(async i => {
+            try {
+              const tokenURI = await contract.methods
+                .tokenURI(i.tokenId)
+                .call();
 
-      const items = await Promise.all(
-        transaction.map(async i => {
-          try {
-            const tokenURI = await contract.methods.tokenURI(i.tokenId).call();
-            const listingStatus = await getListingsStatus(tokenURI); // Wait for listing status
+              let meta = await axios.get(tokenURI);
+              meta = meta.data;
+              const price = formatPrice(i.price);
 
-            let meta = await axios.get(tokenURI);
-            meta = meta.data;
-            let price = web3.utils.fromWei(i.price.toString(), 'ether');
+              const expiryDate = formatExpiryDate(
+                i.expiryState,
+                i.expiryDays,
+                i.expiryTimeStamp,
+              );
 
-            let expiryDate = parseInt(i.expiryDate);
-            if (expiryDate != 0) {
-              expiryDate = new Date(parseInt(expiryDate)).toLocaleString();
-            } else {
-              expiryDate = 0;
+              let item = {
+                price,
+                tokenId: parseInt(i.tokenId),
+                seller: i.seller,
+                expiryDate: expiryDate,
+                state: parseInt(i.state),
+                listingStatus: await getListingsStatus(tokenURI),
+                owner: i.owner,
+                offer: i.offer,
+                image: meta.image,
+                name: meta.name,
+                description: meta.description,
+              };
+
+              return item;
+            } catch (error) {
+              console.error('Error processing NFT:', error);
+              return null; // Handle errors appropriately
             }
+          }),
+        );
 
-            let item = {
-              price,
-              tokenId: parseInt(i.tokenId),
-              seller: i.seller,
-              expiryDays: parseInt(i.expiryDays),
-              expiryDate: expiryDate,
-              expiryState: parseInt(i.expiryState),
-              state: parseInt(i.state),
-              listingStatus, // Add listing status to the item object
-              owner: i.owner,
-              offer: i.offer,
-              image: meta.image,
-              name: meta.name,
-              description: meta.description,
-            };
-            return item;
-          } catch (error) {
-            console.error('Error processing NFT:', error);
-            return null; // Handle errors appropriately
-          }
-        }),
-      );
+        console.log(items);
+        updateData(items.filter(item => item !== null)); // Remove null values
+        updateFetched(true);
+      } catch (error) {
+        console.error('Error fetching NFTs:', error);
+      }
+    };
 
-      console.log(items);
-      updateData(items.filter(item => item !== null)); // Remove null values
-      updateFetched(true);
-    } catch (error) {
-      console.error('Error fetching NFT data:', error);
-    }
-  }
+    fetchNFTs();
+  }, []);
 
   function handleClick() {
     navigate('/create_listing');
@@ -101,7 +100,7 @@ export default function MyListings() {
     textOverflow: 'ellipsis',
   };
 
-  if (!dataFetched) getNFTData();
+  // if (!dataFetched) getNFTData();
   return (
     <div className='px-4 sm:px-6 lg:px-8'>
       <div className='sm:flex sm:items-center mt-6'>
@@ -174,7 +173,7 @@ export default function MyListings() {
                   .map((nft, key) => (
                     <tr
                       key={key}
-                      className={key === data.length - 1 ? '' : ' border-b'}
+                      className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.listingStatus === 'Unlisted' ? 'grayscale bg-slate-300' : ''}`}
                       onClick={() => navigate(`/view_listing/${nft.tokenId}`)}
                     >
                       <th
@@ -208,11 +207,18 @@ export default function MyListings() {
                       </td>
                       <td className='px-6 py-4 max-w-[225px] truncate cursor-pointer'>
                         {/* {nft.state === 1 ? 'Active Offer' : 'Listed'} */}
-                        {/* {nft.listingStatus === 'Listed'
-                          ? 'Listed'
-                          : nft.listingStatus === 'Unlisted'
-                            ? 'Unlisted'
-                            : 'Issue'} */}
+                        {console.log('nft', nft.state)}
+                        {nft.state === 1 ? (
+                          <span class='inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10'>
+                            Active offer
+                          </span>
+                        ) : nft.listingStatus === 'Listed' ? (
+                          'Listed'
+                        ) : nft.listingStatus === 'Unlisted' ? (
+                          'Unlisted'
+                        ) : (
+                          'Issue'
+                        )}
                       </td>
                     </tr>
                   ))}
