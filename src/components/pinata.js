@@ -14,7 +14,7 @@ export const uploadJSONToIPFS = async pinataContent => {
     pinataMetadata: {
       name: 'pinnie.json',
       keyvalues: {
-        listingStatus: 'Listed  ',
+        listingStatus: 'Listed',
       },
     },
     pinataContent: pinataContent,
@@ -88,7 +88,7 @@ export const uploadFileToIPFS = async (file, file_name) => {
     });
 };
 
-export const unlistProduct = async (ipfsPinHash, name, keyvalues) => {
+export const unlistProduct = async ipfsPinHash => {
   const url = 'https://api.pinata.cloud/pinning/hashMetadata';
   const JSONBody = {
     ipfsPinHash: ipfsPinHash,
@@ -125,7 +125,7 @@ export const unlistProduct = async (ipfsPinHash, name, keyvalues) => {
     });
 };
 
-export const reListProduct = async (ipfsPinHash, name, keyvalues) => {
+export const reListProduct = async ipfsPinHash => {
   const url = 'https://api.pinata.cloud/pinning/hashMetadata';
   const JSONBody = {
     ipfsPinHash: ipfsPinHash,
@@ -187,6 +187,80 @@ export const getPinListByHash = async ipfsPinHash => {
     .catch(error => {
       console.error(
         'Error fetching pinned files:',
+        error.response ? error.response.data : error.message,
+      );
+      return {
+        success: false,
+        message: error.message,
+      };
+    });
+};
+
+export const setTrackingNumber = async (ipfsPinHash, tracking_number) => {
+  const url = 'https://api.pinata.cloud/pinning/hashMetadata';
+  const JSONBody = {
+    ipfsPinHash: ipfsPinHash,
+    keyvalues: {
+      trackingNumber: tracking_number,
+    },
+  };
+
+  console.log('Sending request to Pinata with body:', JSONBody);
+
+  return axios
+    .put(url, JSONBody, {
+      headers: {
+        Authorization: `Bearer ${process.env.REACT_APP_MY_PINATA_JWT}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    .then(function (response) {
+      console.log('Response from Pinata:', response.data);
+      return {
+        success: true,
+        data: response.data,
+      };
+    })
+    .catch(function (error) {
+      console.log(
+        'Error response from Pinata:',
+        error.response ? error.response.data : error.message,
+      );
+      return {
+        success: false,
+        message: error.message,
+      };
+    });
+};
+
+export const RemoveTrackingNumber = async ipfsPinHash => {
+  const url = 'https://api.pinata.cloud/pinning/hashMetadata';
+  const JSONBody = {
+    ipfsPinHash: ipfsPinHash,
+    keyvalues: {
+      trackingNumber: '',
+    },
+  };
+
+  console.log('Sending request to Pinata with body:', JSONBody);
+
+  return axios
+    .put(url, JSONBody, {
+      headers: {
+        Authorization: `Bearer ${process.env.REACT_APP_MY_PINATA_JWT}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    .then(function (response) {
+      console.log('Response from Pinata:', response.data);
+      return {
+        success: true,
+        data: response.data,
+      };
+    })
+    .catch(function (error) {
+      console.log(
+        'Error response from Pinata:',
         error.response ? error.response.data : error.message,
       );
       return {

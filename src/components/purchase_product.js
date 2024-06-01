@@ -4,6 +4,7 @@ import { CheckCircleIcon, TrashIcon } from '@heroicons/react/20/solid';
 import { useParams, useNavigate } from 'react-router-dom';
 import Web3 from 'web3';
 import axios from 'axios';
+import { formatSellerExpiryDate, daysToTimestamp } from './utils';
 import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import { TideABI, TideAddress } from './abi/TideTokenABI';
 import { set, useForm } from 'react-hook-form';
@@ -96,66 +97,109 @@ export default function Purchase() {
         const tokenURI = await contract.methods.tokenURI(id).call();
 
         let meta = await axios.get(tokenURI);
+        meta = meta.data;
+        const price = meta.price;
 
-        console.log({ meta });
+        const expiryDate = formatSellerExpiryDate(
+          transaction.expiryState,
+          transaction.expiryDays,
+          transaction.expiryTimeStamp,
+        );
 
-        let price = web3.utils.fromWei(transaction.price.toString(), 'ether');
-
-        var expiry = parseInt(transaction.expiry);
-        if (expiry != 0) {
-          expiry = new Date(parseInt(expiry)).toLocaleString();
-        } else {
-          expiry = 0;
-        }
         var data = {
           price,
           tokenId: parseInt(transaction.tokenId),
           seller: transaction.seller,
-          expiryDays: parseInt(meta.data.attributes.expiry),
-          expiryTimestamp: expiry,
+          expiryDate: expiryDate,
+          expiryDays: parseInt(meta.attributes.expiry),
+          expiryTimestamp: transaction.expiryTimeStamp,
           state: transaction.state,
           owner: transaction.owner,
           offer: transaction.offer,
-          image: meta.data.image,
-          name: meta.data.name,
-          description: meta.data.description,
-          selectedOptions: meta.data.selectedOptions,
+          image: meta.image,
+          name: meta.name,
+          description: meta.description,
+          selectedOptions: meta.attributes.selectedOption.option_parent,
+          storename: '',
         };
+        console.log(data.state);
+        try {
+          const response = await axios.get(
+            'http://16.16.19.83:8000/api/getAccountDetails',
+            {
+              headers: {
+                'Wallet-Address': data.seller,
+              },
+            },
+          );
+          if (response.status === 200) {
+            const { storename } = response.data;
+            data.storename = storename;
+          } else {
+            console.log(
+              'Failed to get account details:',
+              response.data.message,
+            );
+          }
+        } catch (error) {
+          if (error.response) {
+            console.error('Error response:', error.response.data);
+          } else if (error.request) {
+            console.error('Error request:', error.request);
+          } else {
+            console.error('Error message:', error.message);
+          }
+        }
 
         setData(data);
-        console.log(data);
         updateFetched(true);
       } catch (error) {
         console.error('Error fetching NFT:', error);
-        // Handle error here
       }
     };
 
-    fetchData(); // Call the fetchData function when the component mounts
+    fetchData();
   }, [id]);
 
   const purchase = async formData => {
     setErrorMessage('');
+
     let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
     let tokenContract = new web3.eth.Contract(TideABI, TideAddress);
 
     const total_before_gas =
       parseFloat(data.price) + parseFloat(selectedDeliveryMethod.price);
-    console.log({ total_before_gas });
-    const approvalTx = await tokenContract.methods
-      .approve(ContractAddress, total_before_gas)
-      .send({
-        from: userAccount,
-      });
-    console.log('Approval transaction hash:', approvalTx.transactionHash);
 
-    const transaction = await contract.methods.makeOffer(id).send({
-      from: userAccount,
-      gas: 300000, // Use the estimated gas
-    });
-    console.log('Transaction:', transaction);
-
+    const email = formData.email;
+    const full_name = `${formData.firstName} ${formData.surname}`;
+    const full_address = `${formData.address}, ${formData.city}, ${formData.countryField}, ${formData.postalCode}`;
+    const shipping = deliveryMethods.find(
+      rec => rec.id === parseInt(formData.deliveryMethod),
+    ).title;
+    const days_to_timestamp = daysToTimestamp(data.expiryDays);
+    console.log('days_to_timestamp:', days_to_timestamp);
     try {
+      const approvalTx = await tokenContract.methods
+        .approve(ContractAddress, total_before_gas)
+        .send({
+          from: userAccount,
+        });
+
+      const transaction = await contract.methods
+        .makeOffer(
+          id,
+          days_to_timestamp,
+          email,
+          full_name,
+          full_address,
+          shipping,
+        )
+        .send({
+          from: userAccount,
+          gas: 300000, // Use the estimated gas
+        });
+
+      // Prepare the order data
       const order = {
         email: formData.email,
         name: formData.firstName,
@@ -174,30 +218,30 @@ export default function Purchase() {
         total: total_before_gas,
       };
 
-      console.log('Order:', order);
-      const orderResponse = await axios.post(
-        'http://192.168.1.159:8000/api/createOrder',
-        order,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-      console.log('Order response:', orderResponse);
       navigate('/order_history');
-    } catch (e) {
-      if (e.response.data.error == '1000') {
-        setErrorMessage('Invalid Request!');
-      } else if (
-        e.response.data.error >= 1001 &&
-        e.response.data.error <= 1014
-      ) {
-        setErrorMessage('Some of the fields are missing or invalid!');
-      } else if (e.response.data.error == 1015) {
-        setErrorMessage('There is already an order for this product!');
+    } catch (error) {
+      // Handle errors from MetaMask transaction
+      if (error.code === 4001) {
+        // User rejected the transaction
+        setErrorMessage('You have rejected the transaction.');
       } else {
-        setErrorMessage('Something went wrong! Try again');
+        console.log('Error:', error);
+
+        // Handle errors from backend API response
+        if (error.response && error.response.data) {
+          const backendError = error.response.data.error;
+          if (backendError === '1000') {
+            setErrorMessage('Invalid Request!');
+          } else if (backendError >= 1001 && backendError <= 1014) {
+            setErrorMessage('Some of the fields are missing or invalid!');
+          } else if (backendError === '1015') {
+            setErrorMessage('There is already an order for this product!');
+          } else {
+            setErrorMessage('Something went wrong! Try again.');
+          }
+        } else {
+          setErrorMessage('Something went wrong! Try again.');
+        }
       }
     }
     return true;
@@ -548,14 +592,10 @@ export default function Purchase() {
                             Description: {data.description}
                           </p>
                           <p className='mt-1 text-sm text-gray-500'>
-                            Expiry:{' '}
-                            {data.expiryTimestamp === 0 ? (
-                              <p className='inline'>No expiry</p>
-                            ) : (
-                              <span className='inline'>
-                                {data.expiryDays}-days {data.expiryTimestamp}
-                              </span>
-                            )}
+                            Expiry: {data.expiryDate}{' '}
+                          </p>
+                          <p className='mt-1 text-sm text-gray-500'>
+                            Store: {data.storename}
                           </p>
                         </div>
 

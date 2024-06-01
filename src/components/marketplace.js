@@ -7,13 +7,21 @@ import {
 import { Link } from 'react-router-dom';
 import './elements/sidebar/css/sidebar.css';
 import Input from './elements/sidebar/js/input';
-import products from './data';
 import ProductDetails from './elements/product_details/js/product_details';
 import { Web3 } from 'web3';
-import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { updateExpiry } from './utils';
-// import { GetIpfsUrlFromPinata } from './utils';
+import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
+import {
+  formatPrice,
+  formatSellerExpiryDate,
+  isExpired,
+  getListingsStatus,
+  getHashFromUrl,
+} from './utils';
+
+import { getPinListByHash } from './pinata';
+
 import axios from 'axios';
+import { list } from '@web3-storage/w3up-client/account';
 
 const page_length = 6;
 
@@ -24,7 +32,11 @@ export default function Marketplace() {
   const [condition, setConditionInput] = useState('all');
   const [category, setCategoryInput] = useState('all');
   const [price, setPriceInput] = useState('all');
+  const [data, updateData] = useState([]);
+  const [dataFetched, updateFetched] = useState(false);
   const [brand] = useState('all');
+  const web3 = new Web3(window.ethereum);
+  let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
   var sidebar_filter = [brand, condition, category, price];
 
@@ -32,7 +44,7 @@ export default function Marketplace() {
     window.scrollTo(0, 0);
   }, [page_number]);
 
-  const filtered_products = products.filter((product, index) =>
+  const filtered_products = data.filter((product, index) =>
     product.name.toLowerCase().includes(searchInput.toLowerCase()),
   );
 
@@ -40,7 +52,7 @@ export default function Marketplace() {
   const endIdx = startIdx + page_length;
   const displayedProducts = filtered_products.slice(startIdx, endIdx);
 
-  const sidebar_filtered_products = products.filter(product => {
+  const sidebar_filtered_products = data.filter(product => {
     if (
       sidebar_filter.includes('all') ||
       sidebar_filter.every(tag => product.tags.includes(tag))
@@ -76,52 +88,84 @@ export default function Marketplace() {
     setPageNumber(1);
   };
 
-  const provider = new Web3.providers.HttpProvider(
-    'https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4',
-  );
+  useEffect(() => {
+    const fetchNFTs = async () => {
+      try {
+        let address = await web3.eth.getAccounts();
+        address = address[0];
+        let transaction = await contract.methods
+          .getAllNFTs()
+          .call({ from: address });
+        const items = await Promise.all(
+          transaction.map(async i => {
+            try {
+              const tokenURI = await contract.methods
+                .tokenURI(i.tokenId)
+                .call();
 
-  const web3 = new Web3(window.ethereum);
+              let meta = await axios.get(tokenURI);
+              meta = meta.data;
 
-  const [data, updateData] = useState([]);
-  const [dataFetched, updateFetched] = useState(false);
+              let listingStatus = await getListingsStatus(tokenURI);
 
-  async function fetchAllNFTs() {
-    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+              if (parseInt(i.expiryState) === 1) {
+                let isExpired = isExpired(i.expiryTimeStamp);
+                if (isExpired) {
+                  return null;
+                }
+              }
 
-    let transaction = await contract.methods.getAllNFTs().call();
-    const items = await Promise.all(
-      transaction.map(async i => {
-        var token_meta_data = await contract.methods.tokenURI(i.tokenId).call();
-        let meta = await axios.get(token_meta_data, {
-          headers: {
-            withCredentials: false,
-          },
-        });
+              if (listingStatus === 'Unlisted') {
+                return null;
+              }
 
-        meta = meta.data;
-        let price = web3.utils.fromWei(i.price.toString(), 'ether');
-        let updatedExpiry = await updateExpiry(i.tokenId);
-        let item = {
-          price,
-          tokenId: parseInt(i.tokenId),
-          seller: i.seller,
-          expiry: i.expiry,
-          state: parseInt(i.state),
-          owner: i.owner,
-          offer: i.offer,
-          image: meta.image,
-          name: meta.name,
-          orderNumber: i.orderNumber,
-          description: meta.description,
-        };
-        return item;
-      }),
-    );
+              if (
+                [1, 2, 3, 4].includes(parseInt(i.state)) ||
+                i.offer !== EthreumNull
+              ) {
+                return null;
+              }
+              const price = formatPrice(i.price);
 
-    updateFetched(true);
-    updateData(items);
-  }
-  if (!dataFetched) fetchAllNFTs();
+              const expiryDate = formatSellerExpiryDate(
+                i.expiryState,
+                i.expiryDays,
+                i.expiryTimeStamp,
+              );
+
+              let item = {
+                price,
+                tokenId: parseInt(i.tokenId),
+                seller: i.seller,
+                expiryDate: expiryDate,
+                state: parseInt(i.state),
+                listingStatus: listingStatus,
+                owner: i.owner,
+                offer: i.offer,
+                image: meta.image,
+                name: meta.name,
+                description: meta.description,
+              };
+
+              return item;
+            } catch (error) {
+              console.error('Error processing NFT:', error);
+              return null; // Handle errors appropriately
+            }
+          }),
+        );
+
+        console.log(items);
+        updateData(items.filter(item => item !== null)); // Remove null values
+        updateFetched(true);
+      } catch (error) {
+        console.error('Error fetching NFTs:', error);
+      }
+    };
+
+    fetchNFTs();
+  }, []);
+
   return (
     <div className='bg-white'>
       <div className='mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8 mb-10'>
@@ -239,17 +283,15 @@ export default function Marketplace() {
           <div className='col-span-6'>
             <div className='grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8'>
               {searchInput === ''
-                ? data.map(product =>
-                    product.state === 0 ? (
-                      <Link
-                        key={product.tokenId}
-                        to={`/product/${product.tokenId}`}
-                      >
-                        <ProductDetails product={product} />
-                      </Link>
-                    ) : null,
-                  )
-                : data.map(product => (
+                ? data.map(product => (
+                    <Link
+                      key={product.tokenId}
+                      to={`/product/${product.tokenId}`}
+                    >
+                      <ProductDetails product={product} />
+                    </Link>
+                  ))
+                : displayedProducts.map(product => (
                     <Link
                       key={product.tokenId}
                       to={`/product/${product.tokenId}`}

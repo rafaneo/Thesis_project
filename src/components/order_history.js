@@ -1,20 +1,17 @@
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { GetIpfsUrlFromPinata } from './utils';
 import { useState } from 'react';
 import axios from 'axios';
 import Web3 from 'web3';
-import { set } from 'react-hook-form';
+
+import { getTrackingNumber, isExpired, formatBuyerExpiryDate } from './utils';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function OrderHistory() {
-  // const { navigate, state } = useLocation();
   const [filter, setFilter] = useState('');
   const [data, updateData] = useState([]);
-  const [dataOffers, updateDataOffers] = useState([]);
-  const [dataFetched, updateFetched] = useState(false);
   const [wallet, setWallet] = useState('');
-  const navigate = useNavigate();
+  const [dataFetched, updateFetched] = useState(false);
 
   const web3 = new Web3(window.ethereum);
 
@@ -25,36 +22,45 @@ export default function OrderHistory() {
     let transaction = await contract.methods
       .getMyNFTS()
       .call({ from: address });
-
     const items = await Promise.all(
       transaction.map(async i => {
-        const tokenURI = await contract.methods.tokenURI(i.tokenId).call();
-        let meta = await axios.get(tokenURI);
-        meta = meta.data;
-        let price = web3.utils.fromWei(i.price.toString(), 'ether');
+        try {
+          const tokenURI = await contract.methods.tokenURI(i.tokenId).call();
+          let meta = await axios.get(tokenURI);
+          meta = meta.data;
+          const price = i.price;
 
-        let expiry = parseInt(i.expiry);
-        if (expiry != 0) {
-          expiry = new Date(parseInt(expiry)).toLocaleString();
-        } else {
-          expiry = 0;
+          const expiryDate = formatBuyerExpiryDate(
+            i.expiryState,
+            i.expiryDays,
+            i.expiryTimeStamp,
+          );
+
+          let is_expired =
+            parseInt(meta.expiryState) === 1 && isExpired(meta.expiryTimeStamp);
+
+          let item = {
+            price,
+            tokenId: parseInt(i.tokenId),
+            seller: i.seller,
+            expiryDate: expiryDate,
+            state: parseInt(i.state),
+            trackingNumber: await getTrackingNumber(tokenURI),
+            owner: i.owner,
+            is_expired: is_expired,
+            offer: i.offer,
+            image: meta.image,
+            name: meta.name,
+            description: meta.description,
+          };
+          return item;
+        } catch (error) {
+          console.error('Error processing NFT:', error);
+          return null; // Handle errors appropriately
         }
-        let item = {
-          price,
-          tokenId: parseInt(i.tokenId),
-          seller: i.seller,
-          expiry: expiry,
-          state: parseInt(i.state),
-          owner: i.owner,
-          offer: i.offer,
-          image: meta.image,
-          name: meta.name,
-          description: meta.description,
-        };
-
-        return item;
       }),
     );
+
     setWallet(address);
     updateData(items);
     updateFetched(true);
@@ -69,34 +75,39 @@ export default function OrderHistory() {
         .call({ from: address });
 
       const items = await Promise.all(
-        transaction.map(async offer => {
+        transaction.map(async i => {
           try {
-            const tokenURI = await contract.methods
-              .tokenURI(offer.tokenId)
-              .call();
+            const tokenURI = await contract.methods.tokenURI(i.tokenId).call();
 
             const response = await axios.get(tokenURI);
             const meta = response.data;
-            const price = web3.utils.fromWei(offer.price.toString(), 'ether');
+            const price = web3.utils.fromWei(i.price.toString(), 'ether');
 
-            let expiry = parseInt(offer.expiry);
-            expiry = expiry !== 0 ? new Date(expiry).toLocaleString() : 0;
+            const expiryDate = formatBuyerExpiryDate(
+              i.expiryState,
+              i.expiryDays,
+              i.expiryTimeStamp,
+            );
+            console.log('meta:', expiryDate);
+            let is_expired =
+              parseInt(meta.expiryState) === 1 &&
+              isExpired(meta.expiryTimeStamp);
 
-            const item = {
+            console.log(transaction);
+            let item = {
               price,
-              tokenId: parseInt(offer.tokenId),
-              seller: offer.seller,
-              expiry,
-              state: parseInt(offer.state),
-              owner: offer.owner,
-              offer: offer.offer,
+              tokenId: parseInt(i.tokenId),
+              seller: i.seller,
+              expiryDate: expiryDate,
+              state: parseInt(i.state),
+              trackingNumber: await getTrackingNumber(tokenURI),
+              owner: i.owner,
+              is_expired: is_expired,
+              offer: i.offer,
               image: meta.image,
               name: meta.name,
               description: meta.description,
             };
-
-            console.log(item.offer);
-
             return item;
           } catch (error) {
             console.error('Error processing offer:', error);
@@ -106,7 +117,7 @@ export default function OrderHistory() {
       );
 
       const validItems = items.filter(item => item !== null);
-      updateDataOffers(validItems);
+      updateData(validItems);
       updateFetched(true);
       return validItems;
     } catch (error) {
@@ -178,15 +189,18 @@ export default function OrderHistory() {
                   <th scope='col' className='px-6 py-3'>
                     Status
                   </th>
+                  <th scope='col' className='px-6 py-3'>
+                    Tracking Number
+                  </th>
                 </tr>
               </thead>
               <tbody className='bg-gray-50'>
-                {dataOffers
+                {data
                   .filter(rec => rec.name.includes(filter))
                   .map((nft, key) => (
                     <tr
                       key={key}
-                      className={key === data.length - 1 ? '' : ' border-b'}
+                      className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.is_expired ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
                     >
                       <th
                         scope='row'
@@ -201,7 +215,7 @@ export default function OrderHistory() {
                         {nft.price} TiDE
                       </td>
                       <td className='px-6 py-4 max-w-[225px] truncate'>
-                        {nft.expiry === 0 ? 'No Expiry' : nft.expiry}
+                        {nft.is_expired ? 'EXPIRED' : nft.expiryDate}
                       </td>
                       <td className='px-6 py-4 max-w-[225px] truncate'>
                         {nft.description}
@@ -216,10 +230,12 @@ export default function OrderHistory() {
                       <td className='px-6 py-4 max-w-[225px] truncate'>
                         {getState(nft.state)}
                       </td>
+                      <td className='px-6 py-4 max-w-[225px] truncate'>
+                        {nft.trackingNumber}
+                      </td>
                     </tr>
                   ))}
-                {dataOffers.filter(rec => rec.name.includes(filter)).length ===
-                  0 && (
+                {data.filter(rec => rec.name.includes(filter)).length === 0 && (
                   <td className='px-6 py-4' colSpan={7}>
                     No records found...
                   </td>

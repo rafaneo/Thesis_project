@@ -1,4 +1,4 @@
-export const ContractAddress = '0x3eeEEBF970E4921E4bFf0EF64409421041D1DA71';
+export const ContractAddress = '0x6d037ea6650E228C9880Fb76EEe888fAd5a75F8c';
 export const EthreumNull = '0x0000000000000000000000000000000000000000';
 export const TIDEABI = [
   {
@@ -392,11 +392,6 @@ export const TIDEABI = [
       },
       {
         internalType: 'string',
-        name: 'Phone',
-        type: 'string',
-      },
-      {
-        internalType: 'string',
         name: 'FullAddress',
         type: 'string',
       },
@@ -555,11 +550,6 @@ export const TIDEABI = [
           {
             internalType: 'string',
             name: 'FullName',
-            type: 'string',
-          },
-          {
-            internalType: 'string',
-            name: 'Phone',
             type: 'string',
           },
           {
@@ -1040,6 +1030,11 @@ export const TIDEABI = [
         type: 'uint256',
       },
       {
+        internalType: 'uint256',
+        name: 'timestamp',
+        type: 'uint256',
+      },
+      {
         internalType: 'string',
         name: 'email',
         type: 'string',
@@ -1047,11 +1042,6 @@ export const TIDEABI = [
       {
         internalType: 'string',
         name: 'fullName',
-        type: 'string',
-      },
-      {
-        internalType: 'string',
-        name: 'phone',
         type: 'string',
       },
       {

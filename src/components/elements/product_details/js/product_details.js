@@ -1,5 +1,5 @@
 import '../css/product_details.css';
-
+import { formatSellerExpiryDate } from '../../../utils';
 const ProductDetails = ({ product }) => {
   return (
     <div
@@ -20,6 +20,9 @@ const ProductDetails = ({ product }) => {
         </h3>
         <p className='text-sm text-gray-500 truncate' aria-hidden='true'>
           {product.description}
+        </p>
+        <p className='text-sm text-gray-500 truncate' aria-hidden='true'>
+          {product.expiryDate}
         </p>
         <div className='flex flex-1 flex-col justify-end'>
           <p className='text-base font-medium text-gray-900'>

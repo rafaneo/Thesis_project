@@ -69,7 +69,7 @@ const consumableOptions = [
 const ItemOptions = [
   {
     id: 1,
-    name: 'Electronics',
+    name: 'Collectables',
     field_type: 'select',
     option_parent: 'Item',
   },
@@ -243,14 +243,14 @@ export default function CreateListing() {
         }
 
         const [signer] = await web3.eth.getAccounts();
-        // setTimeout(() => {
-        //   disableButton();
-        //   setShowSpinner(true);
-        //   setUploadMessage([
-        //     '',
-        //     'Uploading NFT(might take 5 mins).. please dont click anything!',
-        //   ]);
-        // }, 60000);
+        setTimeout(() => {
+          disableButton();
+          setShowSpinner(true);
+          setUploadMessage([
+            '',
+            'Uploading NFT(might take 5 mins).. please dont click anything!',
+          ]);
+        }, 60000);
 
         let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
         const price_val = web3.utils.toWei(data.price, 'ether');

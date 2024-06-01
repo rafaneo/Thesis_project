@@ -3,7 +3,7 @@ import { StarIcon } from '@heroicons/react/20/solid';
 import { RadioGroup } from '@headlessui/react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import products from './data';
+import { formatPrice, formatSellerExpiryDate } from './utils';
 import axios from 'axios';
 import Web3 from 'web3';
 
@@ -14,22 +14,6 @@ export default function ListingView(props) {
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
-
-  // TODO Ability to change listing.
-
-  async function TokenExpired(id) {
-    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-    let address = await web3.eth.getAccounts();
-    address = address[0];
-    try {
-      let transaction = await contract.methods
-        .updateExpiry(id)
-        .call({ from: address });
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,29 +29,59 @@ export default function ListingView(props) {
         const tokenURI = await contract.methods.tokenURI(id).call();
 
         let meta = await axios.get(tokenURI);
+        meta = meta.data;
+        const price = meta.price;
 
-        let price = web3.utils.fromWei(transaction.price.toString(), 'ether');
-
-        var expiry = parseInt(transaction.expiry);
-        if (expiry != 0) {
-          expiry = new Date(parseInt(expiry)).toLocaleString();
-        } else {
-          expiry = 0;
-        }
+        const expiryDate = formatSellerExpiryDate(
+          transaction.expiryState,
+          transaction.expiryDays,
+          transaction.expiryTimeStamp,
+        );
+        console.log('meta:', transaction.expiryDays);
         var data = {
           price,
           tokenId: parseInt(transaction.tokenId),
           seller: transaction.seller,
-          expiryDays: parseInt(meta.data.attributes.expiry),
-          expiryTimestamp: expiry,
+          expiryDate: expiryDate,
+          expiryDays: parseInt(meta.attributes.expiry),
+          expiryTimestamp: transaction.expiryTimeStamp,
           state: transaction.state,
           owner: transaction.owner,
           offer: transaction.offer,
-          image: meta.data.image,
-          name: meta.data.name,
-          description: meta.data.description,
-          selectedOptions: meta.data.attributes.selectedOption.option_parent,
+          image: meta.image,
+          name: meta.name,
+          description: meta.description,
+          selectedOptions: meta.attributes.selectedOption.option_parent,
+          storename: '',
         };
+
+        try {
+          const response = await axios.get(
+            'http://16.16.19.83:8000/api/getAccountDetails',
+            {
+              headers: {
+                'Wallet-Address': data.seller,
+              },
+            },
+          );
+          if (response.status === 200) {
+            const { storename } = response.data;
+            data.storename = storename;
+          } else {
+            console.log(
+              'Failed to get account details:',
+              response.data.message,
+            );
+          }
+        } catch (error) {
+          if (error.response) {
+            console.error('Error response:', error.response.data);
+          } else if (error.request) {
+            console.error('Error request:', error.request);
+          } else {
+            console.error('Error message:', error.message);
+          }
+        }
         setData(data);
         updateFetched(true);
       } catch (error) {
@@ -192,7 +206,9 @@ export default function ListingView(props) {
                   <a
                     href={`https://etherscan.io/address/${data.seller}`}
                     className='prose prose-sm mt-4 text-gray-500 hover:text-indigo-600 underline'
-                    dangerouslySetInnerHTML={{ __html: data.seller }}
+                    dangerouslySetInnerHTML={{
+                      __html: data.storename ? data.storename : data.seller,
+                    }}
                   />
                 </div>
 
@@ -200,13 +216,7 @@ export default function ListingView(props) {
                   <h2 className='text-sm font-medium text-gray-900'>Expiry</h2>
 
                   <p className='prose prose-sm text-gray-500'>
-                    {data.expiryTimestamp === 0 ? (
-                      <p className='inline'>No expiry</p>
-                    ) : (
-                      <span className='inline'>
-                        {data.expiryDays}-days {data.expiryTimestamp}
-                      </span>
-                    )}
+                    <span className='inline'>{data.expiryDate}</span>
                   </p>
                 </div>
               </div>

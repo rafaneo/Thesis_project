@@ -13,7 +13,7 @@ import axios from 'axios';
 import Web3 from 'web3';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-export default function MyListings() {
+export default function ManageOrders() {
   // const { navigate, state } = useLocation();
   const [filter, setFilter] = useState('');
   const [data, updateData] = useState([]);
@@ -36,7 +36,9 @@ export default function MyListings() {
               const tokenURI = await contract.methods
                 .tokenURI(i.tokenId)
                 .call();
-
+              if (i.state !== 1) {
+                return null;
+              }
               let meta = await axios.get(tokenURI);
               meta = meta.data;
               const price = formatPrice(i.price);
@@ -158,9 +160,6 @@ export default function MyListings() {
                   <th scope='col' className='px-6 py-3'>
                     Image
                   </th>
-                  <th scope='col' className='px-6 py-3'>
-                    Status
-                  </th>
                 </tr>
               </thead>
               <tbody className='bg-gray-50'>
@@ -170,7 +169,7 @@ export default function MyListings() {
                     <tr
                       key={key}
                       className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.listingStatus.trim() === 'Unlisted' || nft.is_expired || nft.state == 2 ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
-                      onClick={() => navigate(`/view_listing/${nft.tokenId}`)}
+                      onClick={() => navigate(`/manage_order/${nft.tokenId}`)}
                     >
                       <th
                         scope='row'
@@ -200,23 +199,6 @@ export default function MyListings() {
                           src={nft.image}
                           alt=''
                         />
-                      </td>
-                      <td className='px-6 py-4 max-w-[225px] truncate cursor-pointer'>
-                        {nft.is_expired ? (
-                          <span class='inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-700/10'>
-                            Expired
-                          </span>
-                        ) : nft.state === 1 ? (
-                          <span class='inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10'>
-                            Active offer
-                          </span>
-                        ) : nft.listingStatus.trim() === 'Listed' ? (
-                          'Listed'
-                        ) : nft.listingStatus.trim() === 'Unlisted' ? (
-                          'Unlisted'
-                        ) : (
-                          'Issue'
-                        )}
                       </td>
                     </tr>
                   ))}

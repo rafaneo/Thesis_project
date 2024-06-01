@@ -3,57 +3,50 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { unlistProduct, reListProduct, getPinListByHash } from './pinata';
+import { setTrackingNumber } from './pinata';
 import {
-  getHashFromUrl,
-  formatPrice,
   getListingsStatus,
   formatSellerExpiryDate,
   isExpired,
+  getHashFromUrl,
 } from './utils';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import ModalDialog from './elements/dialog/js/dialog';
 import axios from 'axios';
 import Web3 from 'web3';
-import { set } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+const schema = yup
+  .object({
+    tracking_number: yup
+      .string()
+      .max(25, 'Tracking number must not exceed 50 characters...')
+      .required('Tracking number is required!'),
+  })
+  .required();
 
-export default function ListingView(props) {
+export default function ManageOrder(props) {
   const { id } = useParams();
   const [data, setData] = useState([]);
   const [personInfo, setPersonInfo] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
   const [wallet, setWallet] = useState('');
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
   const web3 = new Web3(window.ethereum);
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
-  function handleDecline(e) {
-    e.preventDefault();
-    setShowModal(true);
-  }
-
-  async function list() {
-    data.listingStatus = 'Listed';
-    let address = await web3.eth.getAccounts();
-    address = address[0];
-    const tokenURI = await contract.methods.tokenURI(id).call();
-    const pinHash = getHashFromUrl(tokenURI);
-    await reListProduct(pinHash);
-    window.location.reload();
-  }
-
-  async function unList() {
-    data.listingStatus = 'Unlisted';
-    let address = await web3.eth.getAccounts();
-    address = address[0];
-    const tokenURI = await contract.methods.tokenURI(id).call();
-    const pinHash = getHashFromUrl(tokenURI);
-    await unlistProduct(pinHash);
-    window.location.reload();
-  }
-
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isDirty, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(schema),
+    mode: 'all',
+    defaultValues: {
+      tracking_number: '',
+    },
+  });
   const getCustomerDetails = async () => {
     try {
       let accounts = await web3.eth.getAccounts();
@@ -73,7 +66,20 @@ export default function ListingView(props) {
       });
     } catch (error) {
       console.error('Error fetching NFT:', error);
-      // Handle error here
+    }
+  };
+
+  const onSubmit = async values => {
+    try {
+      let address = await web3.eth.getAccounts();
+      address = address[0];
+      const tokenURI = await contract.methods.tokenURI(id).call();
+      const pinHash = getHashFromUrl(tokenURI);
+
+      await setTrackingNumber(pinHash, values.tracking_number);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating NFT:', error);
     }
   };
   useEffect(() => {
@@ -119,12 +125,10 @@ export default function ListingView(props) {
           selectedOptions: meta.selectedOptions,
         };
 
-        console.log(data);
         setData(data);
         updateFetched(true);
       } catch (error) {
         console.error('Error fetching NFT:', error);
-        // Handle error here
       }
 
       try {
@@ -134,42 +138,8 @@ export default function ListingView(props) {
       }
     };
 
-    fetchData(); // Call the fetchData function when the component mounts
+    fetchData();
   }, [id]);
-
-  const acceptOffer = async e => {
-    e.preventDefault();
-
-    let estimate_gas = await contract.methods.acceptOffer(id).estimateGas({
-      from: wallet,
-    });
-
-    let owner = await contract.methods.ownerOf(id).call();
-    let transaction = await contract.methods
-      .acceptOffer(id)
-      .send({ from: wallet, gas: estimate_gas });
-
-    console.log(transaction);
-
-    navigate('/my_listings');
-  };
-
-  const declineOffer = async e => {
-    e.preventDefault();
-
-    let estimate_gas = await contract.methods.acceptOffer(id).estimateGas({
-      from: wallet,
-    });
-
-    let owner = await contract.methods.ownerOf(id).call();
-    let transaction = await contract.methods
-      .acceptOffer(id)
-      .send({ from: wallet, gas: estimate_gas });
-
-    console.log(transaction);
-
-    navigate(`/manage_orders/${id}`);
-  };
 
   if (dataFetched === false) {
     return <p className='text-center mt-10'>Loading...</p>;
@@ -250,46 +220,6 @@ export default function ListingView(props) {
               </div>
 
               <div className='mt-4 lg:col-span-5 space-y-4'>
-                {data.is_expired === false ? (
-                  <form>
-                    {data.listingStatus === 'Listed' ? (
-                      data.offer !== EthreumNull && data.state === 1 ? (
-                        <div>
-                          <button
-                            onClick={acceptOffer}
-                            className='flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
-                          >
-                            Accept Offer
-                          </button>
-                          <button
-                            onClick={handleDecline}
-                            className='flex w-full items-center justify-center rounded-md border border-transparent bg-red-400 px-8 py-3 mt-3 text-base font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2'
-                          >
-                            Decline Offer
-                          </button>
-                          {showModal && (
-                            <ModalDialog
-                              title='Are you sure you want to decline the offer?'
-                              text='Decline'
-                              buttonText='Decline'
-                              onConfirm={() => navigate('/my_listings')}
-                            />
-                          )}
-                        </div>
-                      ) : (
-                        <button
-                          disabled
-                          className={
-                            'flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-500'
-                          }
-                        >
-                          Awaiting Offers
-                        </button>
-                      )
-                    ) : null}
-                  </form>
-                ) : null}
-
                 {/* Product details */}
                 <div className='mt-10'>
                   <h2 className='text-sm font-medium text-gray-900'>
@@ -357,10 +287,9 @@ export default function ListingView(props) {
                               {personInfo.buyer}
                             </a>
                           </p>
-                          {console.log(personInfo)}
                           <p>Email: {personInfo.email}</p>
                           {personInfo.full_name !== '' ? (
-                            <p>Full Name: {personInfo.full_name}</p>
+                            <p>Name: {personInfo.full_name}</p>
                           ) : null}
 
                           <p>Address: {personInfo.full_address}</p>
@@ -371,26 +300,40 @@ export default function ListingView(props) {
                       </Accordion>
                     )
                   : null}
-
-                {data.is_expired === false
-                  ? data.offer === EthreumNull &&
-                    [0, 4].includes(data.state) &&
-                    ['Listed', 'Unlisted'].includes(data.listingStatus) && (
-                      <button
-                        onClick={() =>
-                          data.listingStatus === 'Listed' ? unList() : list()
-                        }
-                        className={
-                          (data.state === 0
-                            ? 'bg-red-400 hover:bg-red-500'
-                            : 'bg-indigo-600 hover:bg-indigo-700') +
-                          ' flex w-full items-center justify-center rounded-md border border-transparent px-8 py-3 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
-                        }
-                      >
-                        {data.listingStatus === 'Listed' ? 'Unlist' : 'List'}
-                      </button>
-                    )
-                  : null}
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className='mt-10 space-y-6'
+                >
+                  <div className='w-full'>
+                    <label
+                      htmlFor='last-name'
+                      className='block text-sm font-medium leading-6 text-gray-900'
+                    >
+                      Enter Tracking Number
+                    </label>
+                    <div className='mt-2'>
+                      <input
+                        type='text'
+                        name='last-name'
+                        id='last-name'
+                        autoComplete='family-name'
+                        className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                        {...register('tracking_number')}
+                      />
+                    </div>
+                    {errors.tracking_number?.message && (
+                      <p className='mt-2 ml-1 w-full text-red-400 text-sm font-normal'>
+                        {errors.tracking_number.message}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type='submit'
+                    className='inline-flex items-center px-4 py-2  mt-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                  >
+                    Save
+                  </button>
+                </form>
               </div>
             </div>
           </div>

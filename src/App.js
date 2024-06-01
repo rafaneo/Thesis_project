@@ -2,8 +2,9 @@ import EditUserSettings from './components/edit-user-settings';
 import CreateListing from './components/create_listing';
 import ViewTokenData from './components/ViewTokenData';
 import OrderHistory from './components/order_history';
-import ShoppingCart from './components/shopping-cart';
+import ManageOrders from './components/manage_orders';
 import Purchase from './components/purchase_product';
+import ManageOrder from './components/manage_order';
 import Marketplace from './components/marketplace';
 import MyListings from './components/my_listings';
 import ListingView from './components/view_offer';
@@ -54,6 +55,8 @@ function App() {
               <Route path='/view_token_data/' element={<ViewTokenData />} />
               <Route path='/my_listings' element={<MyListings />} />
               <Route path='/create_listing' element={<CreateListing />} />
+              <Route path='/manage_orders' element={<ManageOrders />} />
+              <Route path='/manage_order/:id' element={<ManageOrder />} />
               <Route path='/product/:id' element={<Product />} />
               <Route path='/product/:id/purchase' element={<Purchase />} />
               <Route path='/settings' element={<EditUserSettings />} />

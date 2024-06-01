@@ -7,6 +7,7 @@ import DropDown from './elements/drop_down/js/drop_down';
 const navigation = [
   { name: 'All Listings', href: '/', privilage: 'all' },
   { name: 'Make a Listing', href: '/create_listing', privilage: 'logged' },
+  { name: 'Manage Orders', href: '/manage_orders', privilage: 'logged' },
   { name: 'My Listings', href: '/my_listings', privilage: 'logged' },
   { name: 'Order History', href: '/order_history', privilage: 'logged' },
   { name: 'Settings', href: '/settings', privilage: 'logged' },
