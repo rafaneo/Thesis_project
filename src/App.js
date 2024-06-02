@@ -24,9 +24,10 @@ import {
   Routes,
   useNavigate,
 } from 'react-router-dom';
+import { CircularProgress } from '@mui/material';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState();
 
   useEffect(() => {
     let web3;
@@ -44,6 +45,13 @@ function App() {
       }
     });
   }, []);
+
+  if (isLoggedIn === undefined)
+    return (
+      <div className='h-screen w-screen flex items-center justify-center'>
+        <CircularProgress />
+      </div>
+    );
 
   return (
     <div className=''>
