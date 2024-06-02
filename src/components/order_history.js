@@ -1,6 +1,6 @@
-import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Web3 from 'web3';
 
@@ -9,67 +9,127 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function OrderHistory() {
   const [filter, setFilter] = useState('');
-  const [data, updateData] = useState([]);
+  const [data, setData] = useState([]);
   const [wallet, setWallet] = useState('');
-  const [dataFetched, updateFetched] = useState(false);
+  const [dataFetched, setFetched] = useState(false);
+  const navigate = useNavigate();
 
   const web3 = new Web3(window.ethereum);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const contract = new web3.eth.Contract(TIDEABI, ContractAddress);
+        let address = await web3.eth.getAccounts();
+        address = address[0];
 
-  async function getNFTData() {
-    let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-    let address = await web3.eth.getAccounts();
-    address = address[0];
-    let transaction = await contract.methods
-      .getMyNFTS()
-      .call({ from: address });
-    const items = await Promise.all(
-      transaction.map(async i => {
-        try {
-          const tokenURI = await contract.methods.tokenURI(i.tokenId).call();
-          let meta = await axios.get(tokenURI);
-          meta = meta.data;
-          const price = i.price;
+        let transaction = await contract.methods
+          .getMyNFTS()
+          .call({ from: address });
+        const items = await Promise.all(
+          transaction.map(async i => {
+            try {
+              const tokenURI = await contract.methods
+                .tokenURI(i.tokenId)
+                .call();
 
-          const expiryDate = formatBuyerExpiryDate(
-            i.expiryState,
-            i.expiryDays,
-            i.expiryTimeStamp,
-          );
+              if (i.seller == address && i.owner == address) {
+                return null;
+              }
+              let meta = await axios.get(tokenURI);
+              meta = meta.data;
+              const price = i.price;
 
-          let is_expired =
-            parseInt(meta.expiryState) === 1 && isExpired(meta.expiryTimeStamp);
+              const expiryDate = formatBuyerExpiryDate(
+                i.expiryState,
+                i.expiryDays,
+                i.expiryTimeStamp,
+              );
 
-          let item = {
-            price,
-            tokenId: parseInt(i.tokenId),
-            seller: i.seller,
-            expiryDate: expiryDate,
-            state: parseInt(i.state),
-            trackingNumber: await getTrackingNumber(tokenURI),
-            owner: i.owner,
-            is_expired: is_expired,
-            offer: i.offer,
-            image: meta.image,
-            name: meta.name,
-            description: meta.description,
-          };
-          return item;
-        } catch (error) {
-          console.error('Error processing NFT:', error);
-          return null; // Handle errors appropriately
-        }
-      }),
-    );
+              let is_expired =
+                parseInt(meta.expiryState) === 1 &&
+                isExpired(meta.expiryTimeStamp);
 
-    setWallet(address);
-    updateData(items);
-    updateFetched(true);
-  }
+              let item = {
+                price,
+                tokenId: parseInt(i.tokenId),
+                seller: i.seller,
+                expiryDate: expiryDate,
+                state: parseInt(i.state),
+                trackingNumber: await getTrackingNumber(tokenURI),
+                owner: i.owner,
+                is_expired: is_expired,
+                offer: i.offer,
+                image: meta.image,
+                name: meta.name,
+                description: meta.description,
+              };
+              return item;
+            } catch (error) {
+              console.error('Error processing NFT:', error);
+              return null; // Handle errors appropriately
+            }
+          }),
+        );
+
+        transaction = await contract.methods
+          .getMyOffers()
+          .call({ from: address });
+        const offerItems = await Promise.all(
+          transaction.map(async i => {
+            try {
+              const tokenURI = await contract.methods
+                .tokenURI(i.tokenId)
+                .call();
+              const response = await axios.get(tokenURI);
+              const meta = response.data;
+              const price = web3.utils.fromWei(i.price.toString(), 'ether');
+              const expiryDate = formatBuyerExpiryDate(
+                i.expiryState,
+                i.expiryDays,
+                i.expiryTimeStamp,
+              );
+              let is_expired =
+                parseInt(meta.expiryState) === 1 &&
+                isExpired(meta.expiryTimeStamp);
+              let item = {
+                price,
+                tokenId: parseInt(i.tokenId),
+                seller: i.seller,
+                expiryDate: expiryDate,
+                state: parseInt(i.state),
+                trackingNumber: await getTrackingNumber(tokenURI),
+                owner: i.owner,
+                is_expired: is_expired,
+                offer: i.offer,
+                image: meta.image,
+                name: meta.name,
+                description: meta.description,
+              };
+              return item;
+            } catch (error) {
+              console.error('Error processing offer:', error);
+              return null;
+            }
+          }),
+        );
+        const validItems = offerItems.filter(item => item !== null);
+
+        setData([...items, ...validItems]);
+        setWallet(address);
+        setFetched(true);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   async function getNFTOffers() {
     try {
       const contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-      const address = (await web3.eth.getAccounts())[0];
+      let address = await web3.eth.getAccounts();
+      address = address[0];
       const transaction = await contract.methods
         .getMyOffers()
         .call({ from: address });
@@ -117,25 +177,21 @@ export default function OrderHistory() {
       );
 
       const validItems = items.filter(item => item !== null);
-      updateData(validItems);
-      updateFetched(true);
+      setData(validItems);
+      setFetched(true);
       return validItems;
     } catch (error) {
       console.error('Error retrieving NFT offers:', error);
       return [];
     }
   }
+
   const truncateStyle = {
     maxWidth: '250px',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   };
-
-  if (!dataFetched) {
-    getNFTData();
-    getNFTOffers();
-  }
   return (
     <div className='px-4 sm:px-6 lg:px-8'>
       <div className='sm:flex sm:items-center sm:justify-between mt-6'>
@@ -196,11 +252,15 @@ export default function OrderHistory() {
               </thead>
               <tbody className='bg-gray-50'>
                 {data
-                  .filter(rec => rec.name.includes(filter))
+                  .filter(
+                    rec =>
+                      rec != null && rec.name.toLowerCase().includes(filter),
+                  )
                   .map((nft, key) => (
                     <tr
                       key={key}
                       className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.is_expired ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
+                      onClick={() => navigate(`/product/${nft.tokenId}`)}
                     >
                       <th
                         scope='row'
@@ -235,7 +295,8 @@ export default function OrderHistory() {
                       </td>
                     </tr>
                   ))}
-                {data.filter(rec => rec.name.includes(filter)).length === 0 && (
+                {data.filter(rec => rec !== null && rec.name.includes(filter))
+                  .length === 0 && (
                   <td className='px-6 py-4' colSpan={7}>
                     No records found...
                   </td>

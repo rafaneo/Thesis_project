@@ -97,8 +97,6 @@ export const unlistProduct = async ipfsPinHash => {
     },
   };
 
-  console.log('Sending request to Pinata with body:', JSONBody);
-
   return axios
     .put(url, JSONBody, {
       headers: {
@@ -133,8 +131,6 @@ export const reListProduct = async ipfsPinHash => {
       listingStatus: 'Listed',
     },
   };
-
-  console.log('Sending request to Pinata with body:', JSONBody);
 
   return axios
     .put(url, JSONBody, {

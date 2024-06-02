@@ -1,20 +1,17 @@
-import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
 import {
-  getHashFromUrl,
   formatPrice,
   formatSellerExpiryDate,
   getListingsStatus,
   isExpired,
 } from './utils';
 import { useEffect, useState } from 'react';
-import { getPinListByHash } from './pinata';
 import axios from 'axios';
 import Web3 from 'web3';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function MyListings() {
-  // const { navigate, state } = useLocation();
   const [filter, setFilter] = useState('');
   const [data, updateData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
@@ -36,7 +33,6 @@ export default function MyListings() {
               const tokenURI = await contract.methods
                 .tokenURI(i.tokenId)
                 .call();
-
               let meta = await axios.get(tokenURI);
               meta = meta.data;
               const price = formatPrice(i.price);
@@ -44,13 +40,12 @@ export default function MyListings() {
               const expiryDate = formatSellerExpiryDate(
                 i.expiryState,
                 i.expiryDays,
-                i.expiryTimeStamp,
+                i.expiryTimestamp,
               );
-
               let is_expired =
-                parseInt(meta.expiryState) === 1 &&
-                isExpired(meta.expiryTimeStamp);
+                parseInt(i.expiryState) === 1 && isExpired(i.expiryTimestamp);
 
+              console.log('is_expired:', meta.expiryTimeStamp);
               let item = {
                 price,
                 tokenId: parseInt(i.tokenId),
@@ -65,7 +60,6 @@ export default function MyListings() {
                 name: meta.name,
                 description: meta.description,
               };
-              console.log(item.listingStatus);
               return item;
             } catch (error) {
               console.error('Error processing NFT:', error);
@@ -74,7 +68,6 @@ export default function MyListings() {
           }),
         );
 
-        console.log(items);
         updateData(items.filter(item => item !== null)); // Remove null values
         updateFetched(true);
       } catch (error) {

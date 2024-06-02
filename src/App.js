@@ -8,9 +8,11 @@ import ManageOrder from './components/manage_order';
 import Marketplace from './components/marketplace';
 import MyListings from './components/my_listings';
 import ListingView from './components/view_offer';
+import ViewOrder from './components/view_order';
 import TestForm from './components/test_form';
 import { useEffect, useState } from 'react';
 import Product from './components/product';
+import NotFound from './components/error';
 import Header from './components/header';
 import Footer from './components/footer';
 import Login from './components/login';
@@ -59,6 +61,7 @@ function App() {
               <Route path='/manage_order/:id' element={<ManageOrder />} />
               <Route path='/product/:id' element={<Product />} />
               <Route path='/product/:id/purchase' element={<Purchase />} />
+              <Route path='/view_order/:id' element={<ViewOrder />} />
               <Route path='/settings' element={<EditUserSettings />} />
               <Route path='/test_form' element={<TestForm />} />
               <Route path='/view_listing/:id' element={<ListingView />} />
@@ -66,7 +69,7 @@ function App() {
             </>
           )}
           <Route path='/login' element={<Login />} />
-          <Route path='*' element={<h1>Not Found</h1>} />
+          <Route path='*' element={<NotFound />} />
         </Routes>
         <Footer />
       </Router>

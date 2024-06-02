@@ -1,53 +1,22 @@
 import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { formatPrice, formatSellerExpiryDate, fetchNFTs } from './utils';
+import { formatSellerExpiryDate } from './utils';
 import axios from 'axios';
-import Carousel from 'react-material-ui-carousel';
-import { Paper, Button } from '@mui/material';
 import Web3 from 'web3';
 
-export default function ListingView(props) {
+export default function ViewOrder(props) {
   const { id } = useParams();
   const [data, setData] = useState([]);
-  const [recomendedData, updateRecomendedData] = useState([]);
   const [userAccount, setUserAccount] = useState('');
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
-  let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-
-  useEffect(() => {
-    const fetchAndSetRecommendedData = async () => {
-      try {
-        const fetchedData = await fetchNFTs();
-        const randomIndexes = [];
-        const selectedItems = [];
-
-        // Generate 3 unique random indexes
-        while (randomIndexes.length < 3) {
-          const randomIndex = Math.floor(Math.random() * fetchedData.length);
-          if (!randomIndexes.includes(randomIndex)) {
-            randomIndexes.push(randomIndex);
-          }
-        }
-
-        // Select items at random indexes
-        randomIndexes.forEach(index => {
-          selectedItems.push(fetchedData[index]);
-        });
-
-        updateRecomendedData(selectedItems);
-      } catch (error) {
-        console.error('Error fetching and setting recommended NFTs:', error);
-      }
-    };
-    fetchAndSetRecommendedData();
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
         let accounts = await web3.eth.getAccounts();
         let address = accounts[0];
         setUserAccount(address);
@@ -127,7 +96,11 @@ export default function ListingView(props) {
 
   if (dataFetched === false) {
     return <p className='text-center mt-10'>Loading...</p>;
-  } else if ((dataFetched === true && data.state === 3) || data.state === 1) {
+  } else if (
+    (dataFetched === true && data.state === 3) ||
+    data.state === 1 ||
+    data.offer !== userAccount
+  ) {
     navigate('/*');
   } else {
     return (
@@ -251,36 +224,6 @@ export default function ListingView(props) {
               </div>
             </div>
           </div>
-          <Carousel
-            className='mt-10'
-            autoPlay={false}
-            style={{ height: '2500px' }}
-          >
-            {recomendedData.map(item => (
-              <Link
-                to={`/product/${item.tokenId}`}
-                className='mt-2 text-indigo-600 underline border'
-                style={{ textDecoration: 'none' }}
-              >
-                <Paper key={item.tokenId} style={{ height: '100%' }}>
-                  <div className='flex flex-col items-center h-full'>
-                    <img
-                      src={item.image}
-                      className='rounded-lg'
-                      alt={item.name}
-                      style={{
-                        maxHeight: '150px',
-                        maxWidth: '100%',
-                        objectFit: 'cover',
-                      }}
-                    />
-                    <p className='text-lg font-medium mt-2'>{item.name}</p>
-                    <p className='text-lg font-medium'>{item.price} TiDE</p>
-                  </div>
-                </Paper>
-              </Link>
-            ))}
-          </Carousel>
         </div>
       </div>
     );

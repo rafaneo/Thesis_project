@@ -34,24 +34,43 @@ export default function ListingView(props) {
     setShowModal(true);
   }
 
+  async function disableButton() {
+    const listButton = document.getElementById('manage-listing-button');
+    listButton.disabled = true;
+    listButton.style.backgroundColor = 'grey';
+    listButton.style.opacity = 0.3;
+  }
+
   async function list() {
-    data.listingStatus = 'Listed';
-    let address = await web3.eth.getAccounts();
-    address = address[0];
-    const tokenURI = await contract.methods.tokenURI(id).call();
-    const pinHash = getHashFromUrl(tokenURI);
-    await reListProduct(pinHash);
-    window.location.reload();
+    try {
+      disableButton();
+      data.listingStatus = 'Listed';
+      let address = await web3.eth.getAccounts();
+      address = address[0];
+      const tokenURI = await contract.methods.tokenURI(id).call();
+      const pinHash = getHashFromUrl(tokenURI);
+      let listing_promise = reListProduct(pinHash);
+      await Promise.all([listing_promise]);
+      window.location.reload();
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   async function unList() {
-    data.listingStatus = 'Unlisted';
-    let address = await web3.eth.getAccounts();
-    address = address[0];
-    const tokenURI = await contract.methods.tokenURI(id).call();
-    const pinHash = getHashFromUrl(tokenURI);
-    await unlistProduct(pinHash);
-    window.location.reload();
+    try {
+      disableButton();
+      data.listingStatus = 'Unlisted';
+      let address = await web3.eth.getAccounts();
+      address = address[0];
+      const tokenURI = await contract.methods.tokenURI(id).call();
+      const pinHash = getHashFromUrl(tokenURI);
+      let unlist_promise = unlistProduct(pinHash);
+      await Promise.all([unlist_promise]);
+      window.location.reload();
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   const getCustomerDetails = async () => {
@@ -380,6 +399,7 @@ export default function ListingView(props) {
                         onClick={() =>
                           data.listingStatus === 'Listed' ? unList() : list()
                         }
+                        id='manage-listing-button'
                         className={
                           (data.state === 0
                             ? 'bg-red-400 hover:bg-red-500'

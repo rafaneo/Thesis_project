@@ -104,7 +104,7 @@ export default function ManageOrders() {
       <div className='sm:flex sm:items-center mt-6'>
         <div className='sm:flex-auto '>
           <p className='text-2xl font-semibold leading-6 text-gray-900'>
-            My Listings
+            Manage Orders
           </p>
         </div>
         <div className='flex items-center max-w-xs sm:max-w-md w-full'>

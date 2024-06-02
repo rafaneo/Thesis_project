@@ -103,9 +103,8 @@ export default function Purchase() {
         const expiryDate = formatSellerExpiryDate(
           transaction.expiryState,
           transaction.expiryDays,
-          transaction.expiryTimeStamp,
+          transaction.expiryTimestamp,
         );
-
         var data = {
           price,
           tokenId: parseInt(transaction.tokenId),
@@ -122,7 +121,7 @@ export default function Purchase() {
           selectedOptions: meta.attributes.selectedOption.option_parent,
           storename: '',
         };
-        console.log(data.state);
+
         try {
           const response = await axios.get(
             'http://16.16.19.83:8000/api/getAccountDetails',
@@ -177,7 +176,6 @@ export default function Purchase() {
       rec => rec.id === parseInt(formData.deliveryMethod),
     ).title;
     const days_to_timestamp = daysToTimestamp(data.expiryDays);
-    console.log('days_to_timestamp:', days_to_timestamp);
     try {
       const approvalTx = await tokenContract.methods
         .approve(ContractAddress, total_before_gas)
@@ -595,7 +593,7 @@ export default function Purchase() {
                             Expiry: {data.expiryDate}{' '}
                           </p>
                           <p className='mt-1 text-sm text-gray-500'>
-                            Store: {data.storename}
+                            Store: {data.storename ? data.storename : 'Unknown'}
                           </p>
                         </div>
 

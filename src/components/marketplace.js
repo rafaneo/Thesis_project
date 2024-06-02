@@ -15,13 +15,9 @@ import {
   formatSellerExpiryDate,
   isExpired,
   getListingsStatus,
-  getHashFromUrl,
 } from './utils';
-
-import { getPinListByHash } from './pinata';
-
+import tags from './data_categories';
 import axios from 'axios';
-import { list } from '@web3-storage/w3up-client/account';
 
 const page_length = 6;
 
@@ -37,7 +33,6 @@ export default function Marketplace() {
   const [brand] = useState('all');
   const web3 = new Web3(window.ethereum);
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-
   var sidebar_filter = [brand, condition, category, price];
 
   useEffect(() => {
@@ -53,16 +48,16 @@ export default function Marketplace() {
   const displayedProducts = filtered_products.slice(startIdx, endIdx);
 
   const sidebar_filtered_products = data.filter(product => {
-    if (
-      sidebar_filter.includes('all') ||
-      sidebar_filter.every(tag => product.tags.includes(tag))
-    ) {
-      return (
-        (condition === 'all' || product.tags.includes(condition)) &&
-        (category === 'all' || product.tags.includes(category))
-      );
-    }
-    return false;
+    // Check if the product should be included based on the category
+    const categoryMatch =
+      category === 'all' || product.category.includes(category);
+
+    // Check if the product should be included based on the tags
+    const tagsMatch =
+      tags.includes('all') || tags.every(tag => product.category.includes(tag));
+
+    // Return true only if both category and tags match
+    return categoryMatch && tagsMatch;
   });
 
   const page_count = Math.ceil(filtered_products.length / page_length);
@@ -133,6 +128,10 @@ export default function Marketplace() {
                 i.expiryTimeStamp,
               );
 
+              console.log(
+                'meta:',
+                meta.attributes.selectedOption.option_parent,
+              );
               let item = {
                 price,
                 tokenId: parseInt(i.tokenId),
@@ -145,6 +144,7 @@ export default function Marketplace() {
                 image: meta.image,
                 name: meta.name,
                 description: meta.description,
+                category: meta.attributes.selectedOption.option_parent,
               };
 
               return item;
@@ -199,30 +199,16 @@ export default function Marketplace() {
               <div className='self-start'>
                 <h2 className='text-2xl mb-2 mt-4'>Condition</h2>
                 <div className='flex flex-col justify-center'>
-                  <Input
-                    type='radio'
-                    value='all'
-                    title='All'
-                    name='radio-condition'
-                    checked={condition === 'all'}
-                    onChange={handleConditionChange}
-                  />
-                  <Input
-                    type='radio'
-                    value='new'
-                    title='New'
-                    name='radio-condition'
-                    checked={condition === 'new'}
-                    onChange={handleConditionChange}
-                  />
-                  <Input
-                    type='radio'
-                    value='used'
-                    title='Used'
-                    name='radio-condition'
-                    checked={condition === 'used'}
-                    onChange={handleConditionChange}
-                  />
+                  {tags[0].condition.map(tag => (
+                    <Input
+                      key={tag}
+                      value={tag}
+                      title={tag}
+                      name='radio-condition'
+                      checked={condition === tag}
+                      onChange={handleConditionChange}
+                    />
+                  ))}
                 </div>
               </div>
               <div className='self-start'>
