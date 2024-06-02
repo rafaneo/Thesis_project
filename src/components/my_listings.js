@@ -6,15 +6,17 @@ import {
   getListingsStatus,
   isExpired,
 } from './utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import Web3 from 'web3';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import ToggleButtons from './elements/toggle-buttons';
 
 export default function MyListings() {
   const [filter, setFilter] = useState('');
   const [data, updateData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
@@ -78,6 +80,25 @@ export default function MyListings() {
     fetchNFTs();
   }, []);
 
+  const filteredData = useMemo(() => {
+    switch (statusFilter) {
+      case 'all':
+        return data;
+      case 'expired':
+        return data.filter(rec => rec.is_expired === true);
+      case 'listed':
+        return data.filter(
+          rec => rec.listingStatus === 'Listed' && !rec.is_expired,
+        );
+      case 'unlisted':
+        return data.filter(
+          rec => rec.listingStatus === 'Unlisted' && !rec.is_expired,
+        );
+      default:
+        return data;
+    }
+  }, [data, statusFilter]);
+
   function handleClick() {
     navigate('/create_listing');
   }
@@ -98,7 +119,19 @@ export default function MyListings() {
             My Listings
           </p>
         </div>
-        <div className='flex items-center max-w-xs sm:max-w-md w-full'>
+        <div>
+          <ToggleButtons
+            defaultValue='all'
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'listed', label: 'Listed' },
+              { value: 'unlisted', label: 'Unlisted' },
+              { value: 'expired', label: 'Expired' },
+            ]}
+            handleChange={setStatusFilter}
+          />
+        </div>
+        <div className='flex items-center max-w-xs sm:max-w-md w-full ml-2'>
           <label htmlFor='simple-search' className='sr-only'>
             Search
           </label>
@@ -157,7 +190,7 @@ export default function MyListings() {
                 </tr>
               </thead>
               <tbody className='bg-gray-50'>
-                {data
+                {filteredData
                   .filter(rec => rec.name.includes(filter))
                   .map((nft, key) => (
                     <tr
