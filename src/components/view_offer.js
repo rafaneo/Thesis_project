@@ -24,6 +24,7 @@ export default function ListingView(props) {
   const [wallet, setWallet] = useState('');
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [showUnlistModal, setShowUnlistModal] = useState(false);
   const web3 = new Web3(window.ethereum);
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
@@ -55,6 +56,7 @@ export default function ListingView(props) {
 
   async function unList() {
     try {
+      setShowUnlistModal(false);
       disableButton();
       data.listingStatus = 'Unlisted';
       const tokenURI = await contract.methods.tokenURI(id).call();
@@ -391,7 +393,9 @@ export default function ListingView(props) {
                     ['Listed', 'Unlisted'].includes(data.listingStatus) && (
                       <button
                         onClick={() =>
-                          data.listingStatus === 'Listed' ? unList() : list()
+                          data.listingStatus === 'Listed'
+                            ? setShowUnlistModal(true)
+                            : list()
                         }
                         id='manage-listing-button'
                         className={
@@ -409,6 +413,14 @@ export default function ListingView(props) {
             </div>
           </div>
         </div>
+        {showUnlistModal && (
+          <ModalDialog
+            title='Are you sure you want to unlist this product?'
+            text='Unlist'
+            buttonText='Unlist'
+            onConfirm={unList}
+          />
+        )}
       </div>
     );
   }
