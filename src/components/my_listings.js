@@ -45,7 +45,6 @@ export default function MyListings() {
               let is_expired =
                 parseInt(i.expiryState) === 1 && isExpired(i.expiryTimestamp);
 
-              console.log('is_expired:', meta.expiryTimeStamp);
               let item = {
                 price,
                 tokenId: parseInt(i.tokenId),
@@ -88,8 +87,7 @@ export default function MyListings() {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   };
-
-  // if (!dataFetched) getNFTData();
+  
   return (
     <div className='px-4 sm:px-6 lg:px-8'>
       <div className='sm:flex sm:items-center mt-6'>

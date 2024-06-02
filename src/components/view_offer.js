@@ -107,13 +107,14 @@ export default function ListingView(props) {
         const price = meta.price;
 
         const expiryDate = formatSellerExpiryDate(
-          meta.expiryState,
-          meta.expiryDays,
-          meta.expiryTimeStamp,
+          transaction.expiryState,
+          transaction.expiryDays,
+          transaction.expiryTimestamp,
         );
 
+        console.log(transaction);
         let is_expired =
-          parseInt(meta.expiryState) === 1 && isExpired(meta.expiryTimeStamp);
+          parseInt(transaction.expiryState) === 1 && isExpired(transaction.expiryTimestamp);
 
         var data = {
           price,
@@ -225,7 +226,7 @@ export default function ListingView(props) {
             {`
               .watermark {
                 position: absolute;
-                opacity: 0.35;
+                opacity: 0.45;
                 font-size: 13em;
                 width: 100%;
                 text-align: center;
@@ -250,7 +251,6 @@ export default function ListingView(props) {
                 </div>
               </div>
 
-              {/* Image gallery */}
               <div className='mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0'>
                 <h2 className='sr-only'>Images</h2>
 
