@@ -1,5 +1,5 @@
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 import axios from 'axios';
 import Web3 from 'web3';

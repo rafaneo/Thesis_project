@@ -7,7 +7,7 @@ import { uploadFileToIPFS, uploadJSONToIPFS } from './pinata';
 import NFTUpload from './elements/nft_upload/js/nft_upload';
 import { Web3 } from 'web3';
 import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
-import { set, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { SHA256 } from 'crypto-js';
@@ -107,10 +107,6 @@ export default function CreateListing() {
     },
   });
 
-  const provider = new Web3.providers.HttpProvider(
-    'https://eth-sepolia.g.alchemy.com/v2/2bsr75GEPZGZ5I8C7KYtiDpmCDTgQZk4',
-  );
-
   const web3 = new Web3(window.ethereum);
 
   const [noFileMsg, setNoFileMsg] = useState('');
@@ -176,7 +172,7 @@ export default function CreateListing() {
   }
 
   function checkSelection() {
-    if (selection.expiryState == 0) {
+    if (selection.expiryState === 0) {
       if (selection.expiry === 0) {
         setUploadMessage([
           'failed',

@@ -3,10 +3,9 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { unlistProduct, reListProduct, getPinListByHash } from './pinata';
+import { unlistProduct, reListProduct } from './pinata';
 import {
   getHashFromUrl,
-  formatPrice,
   getListingsStatus,
   formatSellerExpiryDate,
   isExpired,
@@ -16,7 +15,6 @@ import { useState, useEffect } from 'react';
 import ModalDialog from './elements/dialog/js/dialog';
 import axios from 'axios';
 import Web3 from 'web3';
-import { set } from 'react-hook-form';
 
 export default function ListingView(props) {
   const { id } = useParams();
@@ -45,8 +43,6 @@ export default function ListingView(props) {
     try {
       disableButton();
       data.listingStatus = 'Listed';
-      let address = await web3.eth.getAccounts();
-      address = address[0];
       const tokenURI = await contract.methods.tokenURI(id).call();
       const pinHash = getHashFromUrl(tokenURI);
       let listing_promise = reListProduct(pinHash);
@@ -61,8 +57,6 @@ export default function ListingView(props) {
     try {
       disableButton();
       data.listingStatus = 'Unlisted';
-      let address = await web3.eth.getAccounts();
-      address = address[0];
       const tokenURI = await contract.methods.tokenURI(id).call();
       const pinHash = getHashFromUrl(tokenURI);
       let unlist_promise = unlistProduct(pinHash);

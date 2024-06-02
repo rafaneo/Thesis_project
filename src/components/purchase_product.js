@@ -7,7 +7,7 @@ import axios from 'axios';
 import { formatSellerExpiryDate, daysToTimestamp } from './utils';
 import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import { TideABI, TideAddress } from './abi/TideTokenABI';
-import { set, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
@@ -42,11 +42,6 @@ const deliveryMethods = [
   },
 ];
 
-const paymentMethods = [
-  { id: 'credit-card', title: 'Credit card' },
-  { id: 'paypal', title: 'PayPal' },
-  { id: 'etransfer', title: 'eTransfer' },
-];
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');

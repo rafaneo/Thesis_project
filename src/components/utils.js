@@ -76,9 +76,9 @@ export const formatSellerExpiryDate = (
   expiryDays = parseInt(expiryDays);
   expiryTimeStamp = parseInt(expiryTimeStamp);
 
-  if (expiryStatus == 0) {
+  if (expiryStatus === 0) {
     return 'Expires ' + expiryDays + ' days after purchase';
-  } else if (expiryStatus == 1) {
+  } else if (expiryStatus === 1) {
     const expiry = new Date(expiryTimeStamp);
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return expiry.toLocaleDateString('en-US', options);
@@ -108,7 +108,7 @@ export const formatBuyerExpiryDate = (
 
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return expiry.toLocaleDateString('en-US', options);
-  } else if (expiryStatus == 1) {
+  } else if (expiryStatus === 1) {
     const expiry = new Date();
     expiry.setTime(expiryTimeStamp);
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
