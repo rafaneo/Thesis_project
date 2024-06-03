@@ -4,6 +4,7 @@ import ViewTokenData from './components/ViewTokenData';
 import OrderHistory from './components/order_history';
 import ManageOrders from './components/manage_orders';
 import Purchase from './components/purchase_product';
+import PurchaseView from './components/view_purchase';
 import ManageOrder from './components/manage_order';
 import Marketplace from './components/marketplace';
 import MyListings from './components/my_listings';
@@ -73,6 +74,7 @@ function App() {
               <Route path='/settings' element={<EditUserSettings />} />
               <Route path='/test_form' element={<TestForm />} />
               <Route path='/view_listing/:id' element={<ListingView />} />
+              <Route path='/view_purchase/:id' element={<PurchaseView />} />
               <Route path='/order_history' element={<OrderHistory />} />
             </>
           )}

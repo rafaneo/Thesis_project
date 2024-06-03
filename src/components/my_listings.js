@@ -32,9 +32,13 @@ export default function MyListings() {
         const items = await Promise.all(
           transaction.map(async i => {
             try {
+              if (parseInt(i.state) === 2) {
+                return null;
+              }
               const tokenURI = await contract.methods
                 .tokenURI(i.tokenId)
                 .call();
+
               let meta = await axios.get(tokenURI);
               meta = meta.data;
               const price = formatPrice(i.price);
@@ -108,7 +112,7 @@ export default function MyListings() {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   };
-  
+
   return (
     <div className='px-4 sm:px-6 lg:px-8'>
       <div className='sm:flex sm:items-center mt-6'>
@@ -193,7 +197,7 @@ export default function MyListings() {
                   .map((nft, key) => (
                     <tr
                       key={key}
-                      className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.listingStatus.trim() === 'Unlisted' || nft.is_expired || nft.state == 2 ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
+                      className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.listingStatus.trim() === 'Unlisted' || nft.is_expired ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
                       onClick={() => navigate(`/view_listing/${nft.tokenId}`)}
                     >
                       <th

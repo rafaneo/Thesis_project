@@ -36,7 +36,7 @@ export default function ManageOrders() {
               const tokenURI = await contract.methods
                 .tokenURI(i.tokenId)
                 .call();
-              if (i.state !== 1) {
+              if (parseInt(i.state) !== 2) {
                 return null;
               }
               let meta = await axios.get(tokenURI);
@@ -168,7 +168,7 @@ export default function ManageOrders() {
                   .map((nft, key) => (
                     <tr
                       key={key}
-                      className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.listingStatus.trim() === 'Unlisted' || nft.is_expired || nft.state == 2 ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
+                      className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.listingStatus.trim() === 'Unlisted' || nft.is_expired ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
                       onClick={() => navigate(`/manage_order/${nft.tokenId}`)}
                     >
                       <th

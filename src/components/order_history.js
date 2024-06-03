@@ -260,7 +260,7 @@ export default function OrderHistory() {
                     <tr
                       key={key}
                       className={`${key === data.length - 1 ? '' : 'border-b'} ${nft.is_expired ? 'grayscale bg-slate-300' : ''} hover:bg-gray-300`}
-                      onClick={() => navigate(`/product/${nft.tokenId}`)}
+                      onClick={() => navigate(`/view_purchase/${nft.tokenId}`)}
                     >
                       <th
                         scope='row'

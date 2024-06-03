@@ -1,53 +1,18 @@
 import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import {
-  formatSellerExpiryDate,
-  fetchNFTs,
-  accessProductRestrictions,
-} from './utils';
+import { formatSellerExpiryDate } from './utils';
 import axios from 'axios';
-import Carousel from 'react-material-ui-carousel';
-import { Paper } from '@mui/material';
 import Web3 from 'web3';
 
-export default function ListingView(props) {
+export default function PurchaseView(props) {
   const { id } = useParams();
   const [data, setData] = useState([]);
-  const [recomendedData, updateRecomendedData] = useState([]);
   const [userAccount, setUserAccount] = useState('');
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
   const web3 = new Web3(window.ethereum);
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-
-  useEffect(() => {
-    const fetchAndSetRecommendedData = async () => {
-      try {
-        const fetchedData = await fetchNFTs();
-        const randomIndexes = [];
-        const selectedItems = [];
-
-        // Generate 3 unique random indexes
-        while (randomIndexes.length < 3) {
-          const randomIndex = Math.floor(Math.random() * fetchedData.length);
-          if (!randomIndexes.includes(randomIndex)) {
-            randomIndexes.push(randomIndex);
-          }
-        }
-
-        // Select items at random indexes
-        randomIndexes.forEach(index => {
-          selectedItems.push(fetchedData[index]);
-        });
-
-        updateRecomendedData(selectedItems);
-      } catch (error) {
-        console.error('Error fetching and setting recommended NFTs:', error);
-      }
-    };
-    fetchAndSetRecommendedData();
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,7 +23,7 @@ export default function ListingView(props) {
         let transaction = await contract.methods
           .getTokenData(id)
           .call({ from: address });
-        accessProductRestrictions(transaction.state, navigate);
+        // accessProductRestrictions(transaction.state, navigate);
         const tokenURI = await contract.methods.tokenURI(id).call();
 
         let meta = await axios.get(tokenURI);
@@ -126,12 +91,9 @@ export default function ListingView(props) {
     fetchData(); // Call the fetchData function when the component mounts
   }, [id]);
 
-  const isOwner = data.seller === userAccount;
-  const hasOffer = data.offer !== EthreumNull;
-
   if (dataFetched === false) {
     return <p className='text-center mt-10'>Loading...</p>;
-  } else if ((dataFetched === true && data.state === 3) || data.state === 1) {
+  } else if (dataFetched === true && data.owner !== userAccount) {
     navigate('/*');
   } else {
     return (
@@ -192,26 +154,6 @@ export default function ListingView(props) {
               </div>
 
               <div className='mt-4 lg:col-span-5 space-y-4'>
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    navigate(`/product/${data.tokenId}/purchase`);
-                  }}
-                >
-                  <button
-                    type='submit'
-                    disabled={isOwner || hasOffer}
-                    className={
-                      'flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-500'
-                    }
-                  >
-                    {isOwner && 'You own this product'}
-                    {hasOffer && 'Offer pending'}
-                    {!(isOwner || hasOffer) && 'Purchase Product'}
-                  </button>
-                </form>
-
-                {/* Product details */}
                 <div className='mt-10'>
                   <h2 className='text-sm font-medium text-gray-900'>
                     Description
@@ -255,36 +197,6 @@ export default function ListingView(props) {
               </div>
             </div>
           </div>
-          <Carousel
-            className='mt-10'
-            autoPlay={false}
-            style={{ height: '2500px' }}
-          >
-            {recomendedData.map(item => (
-              <Link
-                to={`/product/${item.tokenId}`}
-                className='mt-2 text-indigo-600 underline border'
-                style={{ textDecoration: 'none' }}
-              >
-                <Paper key={item.tokenId} style={{ height: '100%' }}>
-                  <div className='flex flex-col items-center h-full'>
-                    <img
-                      src={item.image}
-                      className='rounded-lg'
-                      alt={item.name}
-                      style={{
-                        maxHeight: '150px',
-                        maxWidth: '100%',
-                        objectFit: 'cover',
-                      }}
-                    />
-                    <p className='text-lg font-medium mt-2'>{item.name}</p>
-                    <p className='text-lg font-medium'>{item.price} TiDE</p>
-                  </div>
-                </Paper>
-              </Link>
-            ))}
-          </Carousel>
         </div>
       </div>
     );

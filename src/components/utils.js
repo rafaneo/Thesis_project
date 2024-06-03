@@ -3,7 +3,7 @@ import { ContractAddress, TIDEABI } from './abi/TideNFTABI';
 import { getPinListByHash } from './pinata';
 import axios from 'axios';
 import { EthreumNull } from './abi/TideNFTABI';
-
+import { useNavigate } from 'react-router-dom';
 const web3 = new Web3(window.ethereum);
 let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
@@ -197,5 +197,15 @@ export const fetchNFTs = async () => {
   } catch (error) {
     console.error('Error fetching NFTs:', error);
     return []; // Return an empty array in case of error
+  }
+};
+
+export const accessProductRestrictions = (state, navigate) => {
+  if (state === 0) {
+    return 1;
+  } else if (state === 1) {
+    navigate('/*');
+  } else {
+    navigate('/*');
   }
 };
