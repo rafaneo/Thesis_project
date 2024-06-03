@@ -58,7 +58,7 @@ export default function ListingView(props) {
         let transaction = await contract.methods
           .getTokenData(id)
           .call({ from: address });
-        accessProductRestrictions(transaction.state, navigate);
+        // accessProductRestrictions(transaction.state, navigate);
         const tokenURI = await contract.methods.tokenURI(id).call();
 
         let meta = await axios.get(tokenURI);

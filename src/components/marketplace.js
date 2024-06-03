@@ -30,6 +30,7 @@ export default function Marketplace() {
   const [price, setPriceInput] = useState('all');
   const [data, updateData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
+  const [error, setError] = useState(null);
   const [brand] = useState('all');
   const web3 = new Web3(window.ethereum);
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
@@ -150,7 +151,11 @@ export default function Marketplace() {
               return item;
             } catch (error) {
               console.error('Error processing NFT:', error);
-              return null; // Handle errors appropriately
+              setError(
+                'An Error occured, make sure you are using the SEPOLIA network to connect!',
+              );
+              console.log('Error:', 'here');
+              return null;
             }
           }),
         );
@@ -159,6 +164,9 @@ export default function Marketplace() {
         updateData(items.filter(item => item !== null)); // Remove null values
         updateFetched(true);
       } catch (error) {
+        setError(
+          'An Error occured, make sure you are using the SEPOLIA network to connect!',
+        );
         console.error('Error fetching NFTs:', error);
       }
     };
@@ -288,7 +296,7 @@ export default function Marketplace() {
             </div>
           </div>
         </div>
-
+        {error && <p className='text-center text-red-500'>{error}</p>}
         <nav className='flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-10'>
           {page_number > 1 ? (
             <div className='-mt-px flex w-0 flex-1'>

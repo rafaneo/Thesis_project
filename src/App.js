@@ -19,35 +19,35 @@ import Footer from './components/footer';
 import Login from './components/login';
 import Web3 from 'web3';
 import './index.css';
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  useNavigate,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { CircularProgress } from '@mui/material';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState();
+  const [flag, setFlag] = useState(false);
 
   useEffect(() => {
-    let web3;
-    if (window.ethereum) {
-      web3 = new Web3(window.ethereum);
-    } else if (window.web3) {
-      web3 = new Web3(window.web3.currentProvider);
-    }
-
-    web3.eth.getAccounts().then(async addr => {
-      if (addr.length > 0) {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
+    try {
+      let web3;
+      if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+      } else if (window.web3) {
+        web3 = new Web3(window.web3.currentProvider);
       }
-    });
+
+      web3.eth.getAccounts().then(async addr => {
+        if (addr.length > 0) {
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      });
+    } catch (e) {
+      setFlag(true);
+    }
   }, []);
 
-  if (isLoggedIn === undefined)
+  if (isLoggedIn === undefined && !flag)
     return (
       <div className='h-screen w-screen flex items-center justify-center'>
         <CircularProgress />
@@ -59,6 +59,7 @@ function App() {
       <Router>
         <Header />
         <Routes>
+          {flag && <Route path='/' element={<Login />} />}
           <Route path='/' element={<Marketplace />} />
           {isLoggedIn && (
             <>
