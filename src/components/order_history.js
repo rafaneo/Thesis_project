@@ -37,8 +37,8 @@ export default function OrderHistory() {
               }
               let meta = await axios.get(tokenURI);
               meta = meta.data;
-              const price = i.price;
-
+              const price = web3.utils.fromWei(i.price.toString(), 'ether');
+              console.log(price);
               const expiryDate = formatBuyerExpiryDate(
                 i.expiryState,
                 i.expiryDays,
@@ -124,67 +124,6 @@ export default function OrderHistory() {
 
     fetchData();
   }, []);
-
-  async function getNFTOffers() {
-    try {
-      const contract = new web3.eth.Contract(TIDEABI, ContractAddress);
-      let address = await web3.eth.getAccounts();
-      address = address[0];
-      const transaction = await contract.methods
-        .getMyOffers()
-        .call({ from: address });
-
-      const items = await Promise.all(
-        transaction.map(async i => {
-          try {
-            const tokenURI = await contract.methods.tokenURI(i.tokenId).call();
-
-            const response = await axios.get(tokenURI);
-            const meta = response.data;
-            const price = web3.utils.fromWei(i.price.toString(), 'ether');
-
-            const expiryDate = formatBuyerExpiryDate(
-              i.expiryState,
-              i.expiryDays,
-              i.expiryTimeStamp,
-            );
-            console.log('meta:', expiryDate);
-            let is_expired =
-              parseInt(meta.expiryState) === 1 &&
-              isExpired(meta.expiryTimeStamp);
-
-            console.log(transaction);
-            let item = {
-              price,
-              tokenId: parseInt(i.tokenId),
-              seller: i.seller,
-              expiryDate: expiryDate,
-              state: parseInt(i.state),
-              trackingNumber: await getTrackingNumber(tokenURI),
-              owner: i.owner,
-              is_expired: is_expired,
-              offer: i.offer,
-              image: meta.image,
-              name: meta.name,
-              description: meta.description,
-            };
-            return item;
-          } catch (error) {
-            console.error('Error processing offer:', error);
-            return null;
-          }
-        }),
-      );
-
-      const validItems = items.filter(item => item !== null);
-      setData(validItems);
-      setFetched(true);
-      return validItems;
-    } catch (error) {
-      console.error('Error retrieving NFT offers:', error);
-      return [];
-    }
-  }
 
   const truncateStyle = {
     maxWidth: '250px',
