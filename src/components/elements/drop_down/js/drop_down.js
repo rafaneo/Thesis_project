@@ -51,7 +51,7 @@ const DropDown = ({ connectedAccount, menuItems }) => {
                 </Menu.Item>
               );
             })}
-            <form method='POST' action='#'>
+            {/* <form method='POST' action='#'>
               <Menu.Item>
                 {({ active }) => (
                   <button
@@ -65,7 +65,7 @@ const DropDown = ({ connectedAccount, menuItems }) => {
                   </button>
                 )}
               </Menu.Item>
-            </form>
+            </form> */}
           </div>
         </Menu.Items>
       </Transition>

@@ -32,7 +32,10 @@ export default function Marketplace() {
   const [dataFetched, updateFetched] = useState(false);
   const [error, setError] = useState(null);
   const [brand] = useState('all');
-  const web3 = new Web3(window.ethereum);
+
+  const provider = `https://eth-sepolia.g.alchemy.com/v2/${process.env.REACT_APP_MY_ALCHEMY_API_KEY}`;
+  console.log(provider);
+  const web3 = new Web3(new Web3.providers.HttpProvider(provider));
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
   var sidebar_filter = [brand, condition, category, price];
 
@@ -151,9 +154,6 @@ export default function Marketplace() {
               return item;
             } catch (error) {
               console.error('Error processing NFT:', error);
-              setError(
-                'An Error occured, make sure you are using the SEPOLIA network to connect!',
-              );
               console.log('Error:', 'here');
               return null;
             }
@@ -164,9 +164,6 @@ export default function Marketplace() {
         updateData(items.filter(item => item !== null)); // Remove null values
         updateFetched(true);
       } catch (error) {
-        setError(
-          'An Error occured, make sure you are using the SEPOLIA network to connect!',
-        );
         console.error('Error fetching NFTs:', error);
       }
     };
