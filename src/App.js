@@ -61,6 +61,8 @@ function App() {
         <Routes>
           {flag && <Route path='/' element={<Login />} />}
           <Route path='/' element={<Marketplace />} />
+          <Route path='/product/:id' element={<Product />} />
+
           {isLoggedIn && (
             <>
               {/*This is for testing */}
@@ -69,7 +71,6 @@ function App() {
               <Route path='/create_listing' element={<CreateListing />} />
               <Route path='/manage_orders' element={<ManageOrders />} />
               <Route path='/manage_order/:id' element={<ManageOrder />} />
-              <Route path='/product/:id' element={<Product />} />
               <Route path='/product/:id/purchase' element={<Purchase />} />
               <Route path='/view_order/:id' element={<ViewOrder />} />
               <Route path='/settings' element={<EditUserSettings />} />

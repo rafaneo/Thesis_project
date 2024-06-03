@@ -13,8 +13,8 @@ import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import {
   formatPrice,
   formatSellerExpiryDate,
-  isExpired,
   getListingsStatus,
+  isExpired,
 } from './utils';
 import tags from './data_categories';
 import axios from 'axios';
@@ -30,11 +30,9 @@ export default function Marketplace() {
   const [price, setPriceInput] = useState('all');
   const [data, updateData] = useState([]);
   const [dataFetched, updateFetched] = useState(false);
-  const [error, setError] = useState(null);
   const [brand] = useState('all');
 
   const provider = `https://eth-sepolia.g.alchemy.com/v2/${process.env.REACT_APP_MY_ALCHEMY_API_KEY}`;
-  console.log(provider);
   const web3 = new Web3(new Web3.providers.HttpProvider(provider));
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
   var sidebar_filter = [brand, condition, category, price];
@@ -108,7 +106,7 @@ export default function Marketplace() {
               let listingStatus = await getListingsStatus(tokenURI);
 
               if (parseInt(i.expiryState) === 1) {
-                let isExpired = isExpired(i.expiryTimeStamp);
+                let is_expired = isExpired(i.expiryTimeStamp);
                 if (isExpired) {
                   return null;
                 }
@@ -293,7 +291,6 @@ export default function Marketplace() {
             </div>
           </div>
         </div>
-        {error && <p className='text-center text-red-500'>{error}</p>}
         <nav className='flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-10'>
           {page_number > 1 ? (
             <div className='-mt-px flex w-0 flex-1'>

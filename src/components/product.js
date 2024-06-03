@@ -1,11 +1,7 @@
 import { ContractAddress, TIDEABI, EthreumNull } from './abi/TideNFTABI';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import {
-  formatSellerExpiryDate,
-  fetchNFTs,
-  accessProductRestrictions,
-} from './utils';
+import { formatSellerExpiryDate, fetchNFTs } from './utils';
 import axios from 'axios';
 import Carousel from 'react-material-ui-carousel';
 import { Paper } from '@mui/material';
@@ -18,36 +14,38 @@ export default function ListingView(props) {
   const [userAccount, setUserAccount] = useState('');
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
-  const web3 = new Web3(window.ethereum);
+
+  const provider = `https://eth-sepolia.g.alchemy.com/v2/${process.env.REACT_APP_MY_ALCHEMY_API_KEY}`;
+  const web3 = new Web3(new Web3.providers.HttpProvider(provider));
   let contract = new web3.eth.Contract(TIDEABI, ContractAddress);
 
-  useEffect(() => {
-    const fetchAndSetRecommendedData = async () => {
-      try {
-        const fetchedData = await fetchNFTs();
-        const randomIndexes = [];
-        const selectedItems = [];
+  // useEffect(() => {
+  //   const fetchAndSetRecommendedData = async () => {
+  //     try {
+  //       const fetchedData = await fetchNFTs();
+  //       const randomIndexes = [];
+  //       const selectedItems = [];
 
-        // Generate 3 unique random indexes
-        while (randomIndexes.length < 3) {
-          const randomIndex = Math.floor(Math.random() * fetchedData.length);
-          if (!randomIndexes.includes(randomIndex)) {
-            randomIndexes.push(randomIndex);
-          }
-        }
+  //       // Generate 3 unique random indexes
+  //       while (randomIndexes.length < 3) {
+  //         const randomIndex = Math.floor(Math.random() * fetchedData.length);
+  //         if (!randomIndexes.includes(randomIndex)) {
+  //           randomIndexes.push(randomIndex);
+  //         }
+  //       }
 
-        // Select items at random indexes
-        randomIndexes.forEach(index => {
-          selectedItems.push(fetchedData[index]);
-        });
+  //       // Select items at random indexes
+  //       randomIndexes.forEach(index => {
+  //         selectedItems.push(fetchedData[index]);
+  //       });
 
-        updateRecomendedData(selectedItems);
-      } catch (error) {
-        console.error('Error fetching and setting recommended NFTs:', error);
-      }
-    };
-    fetchAndSetRecommendedData();
-  }, []);
+  //       updateRecomendedData(selectedItems);
+  //     } catch (error) {
+  //       console.error('Error fetching and setting recommended NFTs:', error);
+  //     }
+  //   };
+  //   fetchAndSetRecommendedData();
+  // }, []);
 
   useEffect(() => {
     const fetchData = async () => {
