@@ -42,7 +42,6 @@ const deliveryMethods = [
   },
 ];
 
-
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
@@ -56,7 +55,8 @@ export default function Purchase() {
 
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
-  const web3 = new Web3(window.ethereum);
+  const provider = `https://eth-sepolia.g.alchemy.com/v2/${process.env.REACT_APP_MY_ALCHEMY_API_KEY}`;
+  const web3 = new Web3(new Web3.providers.HttpProvider(provider));
 
   const {
     register,

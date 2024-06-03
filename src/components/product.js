@@ -12,6 +12,7 @@ export default function ListingView(props) {
   const [data, setData] = useState([]);
   const [recomendedData, updateRecomendedData] = useState([]);
   const [userAccount, setUserAccount] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dataFetched, updateFetched] = useState(false);
   const navigate = useNavigate();
 
@@ -52,6 +53,9 @@ export default function ListingView(props) {
       try {
         let accounts = await web3.eth.getAccounts();
         let address = accounts[0];
+        if (address) {
+          setIsLoggedIn(true);
+        }
         setUserAccount(address);
         let transaction = await contract.methods
           .getTokenData(id)
@@ -198,14 +202,15 @@ export default function ListingView(props) {
                 >
                   <button
                     type='submit'
-                    disabled={isOwner || hasOffer}
+                    disabled={isOwner || hasOffer || !isLoggedIn}
                     className={
                       'flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-500'
                     }
                   >
+                    {!isLoggedIn && 'Login to purchase'}
                     {isOwner && 'You own this product'}
                     {hasOffer && 'Offer pending'}
-                    {!(isOwner || hasOffer) && 'Purchase Product'}
+                    {!(isOwner || hasOffer) && isLoggedIn && 'Purchase Product'}
                   </button>
                 </form>
 
@@ -253,7 +258,7 @@ export default function ListingView(props) {
               </div>
             </div>
           </div>
-          <Carousel
+          {/* <Carousel
             className='mt-10'
             autoPlay={false}
             style={{ height: '2500px' }}
@@ -282,7 +287,7 @@ export default function ListingView(props) {
                 </Paper>
               </Link>
             ))}
-          </Carousel>
+          </Carousel> */}
         </div>
       </div>
     );
